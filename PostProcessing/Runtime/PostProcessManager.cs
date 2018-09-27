@@ -278,7 +278,102 @@ namespace UnityEngine.Rendering.PostProcessing
             }
         }
 
+        // Faster version of OverrideSettings to force replace values in the global state
+        void ReplaceData(ReadoutPostProcessLayer postProcessLayer)
+        {
+            foreach (var settings in m_BaseSettings)
+            {
+                var target = postProcessLayer.GetBundle(settings.GetType()).settings;
+                int count = settings.parameters.Count;
+
+                for (int i = 0; i < count; i++)
+                    target.parameters[i].SetValue(settings.parameters[i]);
+            }
+        }
+
         internal void UpdateSettings(PostProcessLayer postProcessLayer, Camera camera)
+        {
+            // Reset to base state
+            ReplaceData(postProcessLayer);
+
+            // If no trigger is set, only global volumes will have influence
+            int mask = postProcessLayer.volumeLayer.value;
+            var volumeTrigger = postProcessLayer.volumeTrigger;
+            bool onlyGlobal = volumeTrigger == null;
+            var triggerPos = onlyGlobal ? Vector3.zero : volumeTrigger.position;
+
+            // Sort the cached volume list(s) for the given layer mask if needed and return it
+            var volumes = GrabVolumes(mask);
+
+            // Traverse all volumes
+            foreach (var volume in volumes)
+            {
+#if UNITY_EDITOR
+                // Skip volumes that aren't in the scene currently displayed in the scene view
+                if (!IsVolumeRenderedByCamera(volume, camera))
+                    continue;
+#endif
+
+                // Skip disabled volumes and volumes without any data or weight
+                if (!volume.enabled || volume.profileRef == null || volume.weight <= 0f)
+                    continue;
+
+                var settings = volume.profileRef.settings;
+
+                // Global volume always have influence
+                if (volume.isGlobal)
+                {
+                    postProcessLayer.OverrideSettings(settings, Mathf.Clamp01(volume.weight));
+                    continue;
+                }
+
+                if (onlyGlobal)
+                    continue;
+
+                // If volume isn't global and has no collider, skip it as it's useless
+                var colliders = m_TempColliders;
+                volume.GetComponents(colliders);
+                if (colliders.Count == 0)
+                    continue;
+
+                // Find closest distance to volume, 0 means it's inside it
+                float closestDistanceSqr = float.PositiveInfinity;
+
+                foreach (var collider in colliders)
+                {
+                    if (!collider.enabled)
+                        continue;
+
+                    var closestPoint = collider.ClosestPoint(triggerPos); // 5.6-only API
+                    var d = ((closestPoint - triggerPos) / 2f).sqrMagnitude;
+
+                    if (d < closestDistanceSqr)
+                        closestDistanceSqr = d;
+                }
+
+                colliders.Clear();
+                float blendDistSqr = volume.blendDistance * volume.blendDistance;
+
+                // Volume has no influence, ignore it
+                // Note: Volume doesn't do anything when `closestDistanceSqr = blendDistSqr` but
+                //       we can't use a >= comparison as blendDistSqr could be set to 0 in which
+                //       case volume would have total influence
+                if (closestDistanceSqr > blendDistSqr)
+                    continue;
+
+                // Volume has influence
+                float interpFactor = 1f;
+
+                if (blendDistSqr > 0f)
+                    interpFactor = 1f - (closestDistanceSqr / blendDistSqr);
+
+                // No need to clamp01 the interpolation factor as it'll always be in [0;1[ range
+                postProcessLayer.OverrideSettings(settings, interpFactor * Mathf.Clamp01(volume.weight));
+            }
+        }
+
+
+        internal void UpdateSettings(ReadoutPostProcessLayer postProcessLayer, Camera camera)
         {
             // Reset to base state
             ReplaceData(postProcessLayer);
