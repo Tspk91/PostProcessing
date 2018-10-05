@@ -38,6 +38,8 @@ namespace UnityEngine.Rendering.PostProcessing
         const int k_SampleCount = 8;
         public int sampleIndex { get; private set; }
 
+        public static System.Action<Vector2> onJitterGenerated = delegate { };
+
         // Ping-pong between two history textures as we can't read & write the same target in the
         // same pass
         const int k_NumEyes = 2;
@@ -81,11 +83,19 @@ namespace UnityEngine.Rendering.PostProcessing
             return offset;
         }
 
+        public void UpdateJitterOffset()
+        {
+            jitter = GenerateRandomOffset();
+            jitter *= jitterSpread;
+            onJitterGenerated(jitter);
+        }
+
         public Matrix4x4 GetJitteredProjectionMatrix(Camera camera)
         {
             Matrix4x4 cameraProj;
-            jitter = GenerateRandomOffset();
-            jitter *= jitterSpread;
+            //jitter = GenerateRandomOffset();
+            //jitter *= jitterSpread;
+            //onJitterGenerated(jitter);
 
             if (jitteredMatrixFunc != null)
             {

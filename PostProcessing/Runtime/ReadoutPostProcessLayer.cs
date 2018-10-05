@@ -255,11 +255,7 @@ namespace UnityEngine.Rendering.PostProcessing
 
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.H))
-            {
-                loaded = !loaded;
-                Debug.Log(loaded + " AHORA");
-            }
+            temporalAntialiasing.UpdateJitterOffset();
         }
 
         // Called everytime the user resets the component from the inspector and more importantly
