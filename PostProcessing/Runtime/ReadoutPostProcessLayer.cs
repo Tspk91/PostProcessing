@@ -255,7 +255,7 @@ namespace UnityEngine.Rendering.PostProcessing
 
         private void Update()
         {
-           // temporalAntialiasing.UpdateJitterOffset();
+            temporalAntialiasing.UpdateJitterOffset();
         }
 
         // Called everytime the user resets the component from the inspector and more importantly
@@ -510,7 +510,6 @@ namespace UnityEngine.Rendering.PostProcessing
             context.GetScreenSpaceTemporaryRT(context.command, taaTarget, 0, context.sourceFormat);
             context.destination = taaTarget;
             temporalAntialiasing.Render(context);
-            cBufferTAA.BuiltinBlit(taaTarget, finalDestination, RuntimeUtilities.copyStdMaterial, stopNaNPropagation ? 1 : 0);
             context.source = taaTarget;
             context.destination = finalDestination;
         }
