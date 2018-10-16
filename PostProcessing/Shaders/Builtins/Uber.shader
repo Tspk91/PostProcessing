@@ -22,6 +22,7 @@ Shader "Hidden/PostProcessing/Uber"
 
         TEXTURE2D_SAMPLER2D(_MainTex, sampler_MainTex);
         float4 _MainTex_TexelSize;
+		float _Saturation;
 
         // Auto exposure / eye adaptation
         TEXTURE2D_SAMPLER2D(_AutoExposureTex, sampler_AutoExposureTex);
@@ -68,6 +69,62 @@ Shader "Hidden/PostProcessing/Uber"
 
         // Misc
         half _LumaInAlpha;
+
+
+		half3 rgb_to_hsv(half3 RGB)
+		{
+			half r = RGB.x;
+			half g = RGB.y;
+			half b = RGB.z;
+
+			half minChannel = min(r, min(g, b));
+			half maxChannel = max(r, max(g, b));
+
+			half h = 0;
+			half s = 0;
+			half v = maxChannel;
+
+			half delta = maxChannel - minChannel;
+
+			if (delta != 0)
+			{
+				s = delta / v;
+
+				if (r == v) h = (g - b) / delta;
+				else if (g == v) h = 2 + (b - r) / delta;
+				else if (b == v) h = 4 + (r - g) / delta;
+			}
+
+			return half3(h, s, v);
+		}
+
+		half3 hsv_to_rgb(half3 HSV)
+		{
+			half3 RGB = HSV.z;
+
+			half h = HSV.x;
+			half s = HSV.y;
+			half v = HSV.z;
+
+			half i = floor(h);
+			half f = h - i;
+
+			half p = (1.0 - s);
+			half q = (1.0 - s * f);
+			half t = (1.0 - s * (1 - f));
+
+			if (i == 0) { RGB = half3(1, t, p); }
+			else if (i == 1) { RGB = half3(q, 1, p); }
+			else if (i == 2) { RGB = half3(p, 1, t); }
+			else if (i == 3) { RGB = half3(p, q, 1); }
+			else if (i == 4) { RGB = half3(t, p, 1); }
+			else /* i == -1 */ { RGB = half3(1, p, q); }
+
+			RGB *= v;
+
+			return RGB;
+		}
+
 
         half4 FragUber(VaryingsDefault i) : SV_Target
         {
@@ -256,6 +313,13 @@ Shader "Hidden/PostProcessing/Uber"
                 #endif
             }
             #endif
+
+
+			// sample the texture
+			//float3 col = tex2D(_MainTex, i.uv);
+			half3 hsv = rgb_to_hsv(output.xyz);
+			hsv.y *= _Saturation;
+			output.xyz = hsv_to_rgb(hsv);
 
             // Output RGB is still HDR at that point (unless range was crunched by a tonemapper)
             return output;

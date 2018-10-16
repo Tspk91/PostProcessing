@@ -85,17 +85,16 @@ namespace UnityEngine.Rendering.PostProcessing
 
         public void UpdateJitterOffset()
         {
-            jitter = GenerateRandomOffset();
-            jitter *= jitterSpread;
-            onJitterGenerated(jitter);
+            //jitter = GenerateRandomOffset();
+            //jitter *= jitterSpread;
+            //onJitterGenerated(jitter);
         }
 
         public Matrix4x4 GetJitteredProjectionMatrix(Camera camera)
         {
             Matrix4x4 cameraProj;
-            //jitter = GenerateRandomOffset();
-            //jitter *= jitterSpread;
-            //onJitterGenerated(jitter);
+            jitter = GenerateRandomOffset()*20;
+            jitter *= jitterSpread;
 
             if (jitteredMatrixFunc != null)
             {
@@ -125,8 +124,8 @@ namespace UnityEngine.Rendering.PostProcessing
         {
 #if  UNITY_2017_3_OR_NEWER
             var camera = context.camera;
-            jitter = GenerateRandomOffset();
-            jitter *= jitterSpread;
+            //jitter = GenerateRandomOffset();
+            //jitter *= jitterSpread;
 
             for (var eye = Camera.StereoscopicEye.Left; eye <= Camera.StereoscopicEye.Right; eye++)
             {
