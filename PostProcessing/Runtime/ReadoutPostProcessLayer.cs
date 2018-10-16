@@ -627,16 +627,16 @@ namespace UnityEngine.Rendering.PostProcessing
 
             if (!RuntimeUtilities.scriptableRenderPipelineActive)
             {
-                if (context.stereoActive)
+                /*if (context.stereoActive)
                 {
                     // We only need to configure all of this once for stereo, during OnPreCull
                     if (context.camera.stereoActiveEye != Camera.MonoOrStereoscopicEye.Right)
                         temporalAntialiasing.ConfigureStereoJitteredProjectionMatrices(context);
                 }
                 else
-                {
+                {*/
                     temporalAntialiasing.ConfigureJitteredProjectionMatrix(context);
-                }
+                //}
             }
 
             var taaTarget = m_TargetPool.Get();
