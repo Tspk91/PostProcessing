@@ -46,7 +46,7 @@ namespace UnityEngine.Rendering.PostProcessing
         const int k_NumHistoryTextures = 2;
         readonly RenderTexture[][] m_HistoryTextures = new RenderTexture[k_NumEyes][];
 
-        int[] m_HistoryPingPong = new int [k_NumEyes];
+        int[] m_HistoryPingPong = new int[k_NumEyes];
 
         public bool IsSupported()
         {
@@ -93,9 +93,8 @@ namespace UnityEngine.Rendering.PostProcessing
         public Matrix4x4 GetJitteredProjectionMatrix(Camera camera)
         {
             Matrix4x4 cameraProj;
-            //jitter = GenerateRandomOffset();
+            //jitter = GenerateRandomOffset() * 20;
             //jitter *= jitterSpread;
-            //onJitterGenerated(jitter);
 
             if (jitteredMatrixFunc != null)
             {
@@ -125,8 +124,8 @@ namespace UnityEngine.Rendering.PostProcessing
         {
 #if  UNITY_2017_3_OR_NEWER
             var camera = context.camera;
-            jitter = GenerateRandomOffset();
-            jitter *= jitterSpread;
+            //jitter = GenerateRandomOffset();
+            //jitter *= jitterSpread;
 
             for (var eye = Camera.StereoscopicEye.Left; eye <= Camera.StereoscopicEye.Right; eye++)
             {
@@ -231,7 +230,7 @@ namespace UnityEngine.Rendering.PostProcessing
                 {
                     if (m_HistoryTextures[i] == null)
                         continue;
-                    
+
                     for (int j = 0; j < m_HistoryTextures[i].Length; j++)
                     {
                         RenderTexture.ReleaseTemporary(m_HistoryTextures[i][j]);
@@ -245,7 +244,7 @@ namespace UnityEngine.Rendering.PostProcessing
             sampleIndex = 0;
             m_HistoryPingPong[0] = 0;
             m_HistoryPingPong[1] = 0;
-            
+
             ResetHistory();
         }
     }

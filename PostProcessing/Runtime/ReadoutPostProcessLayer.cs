@@ -323,145 +323,11 @@ namespace UnityEngine.Rendering.PostProcessing
         RenderTargetIdentifier cameraTarget;
         void BuildCommandBuffers()
         {
-
             if (!loaded)
                 LoadCommandBuffers();
             else
                 UpdateCommandBuffers();
             m_TargetPool.Reset();
-            //var context = currentContext;
-
-            //if (!RuntimeUtilities.isFloatingPointFormat(sourceFormat))
-            //    NaNKilled = true;
-            //if (refresh)
-            //{
-            //    context.Reset();
-            //    context.camera = m_Camera;
-            //    context.sourceFormat = sourceFormat;
-
-            //    // TODO: Investigate retaining command buffers on XR multi-pass right eye
-
-            //    cBufferBeforeReflections.Clear();
-            //    cBufferBeforeLighting.Clear();
-            //    cBufferOpaque.Clear();
-            //    cBufferStack.Clear();
-            //}
-
-            //cBufferBeforeStack.Clear();
-            //cameraTarget = new RenderTargetIdentifier(BuiltinRenderTextureType.CameraTarget);
-
-            //if (refresh)
-            //{
-            //    SetupContext(context);
-            //    context.command = cBufferOpaque;
-            //    TextureLerper.instance.BeginFrame(context);
-            //    UpdateSettingsIfNeeded(context);
-
-            //    // Lighting & opaque-only effects
-            //    var aoBundle = GetBundle<AmbientOcclusion>();
-            //    var aoSettings = aoBundle.CastSettings<AmbientOcclusion>();
-            //    var aoRenderer = aoBundle.CastRenderer<AmbientOcclusionRenderer>();
-
-            //    bool aoSupported = aoSettings.IsEnabledAndSupported(context);
-            //    bool aoAmbientOnly = aoRenderer.IsAmbientOnly(context);
-            //    bool isAmbientOcclusionDeferred = aoSupported && aoAmbientOnly;
-            //    bool isAmbientOcclusionOpaque = aoSupported && !aoAmbientOnly;
-
-            //    var ssrBundle = GetBundle<ScreenSpaceReflections>();
-            //    var ssrSettings = ssrBundle.settings;
-            //    var ssrRenderer = ssrBundle.renderer;
-            //    bool isScreenSpaceReflectionsActive = ssrSettings.IsEnabledAndSupported(context);
-
-            //    // Ambient-only AO is a special case and has to be done in separate command buffers
-            //    if (isAmbientOcclusionDeferred && refresh)
-            //    {
-            //        var ao = aoRenderer.Get();
-
-            //        // Render as soon as possible - should be done async in SRPs when available
-            //        context.command = cBufferBeforeReflections;
-
-            //        ao.RenderAmbientOnly(context);
-
-            //        // Composite with GBuffer right before the lighting pass
-            //        context.command = cBufferBeforeLighting;
-            //        ao.CompositeAmbientOnly(context);
-            //    }
-
-
-            //    bool isFogActive = fog.IsEnabledAndSupported(context);
-            //    bool hasCustomOpaqueOnlyEffects = HasOpaqueOnlyEffects(context);
-            //    int opaqueOnlyEffects = 0;
-            //    opaqueOnlyEffects += isScreenSpaceReflectionsActive ? 1 : 0;
-            //    opaqueOnlyEffects += isFogActive ? 1 : 0;
-            //    opaqueOnlyEffects += hasCustomOpaqueOnlyEffects ? 1 : 0;
-
-            //    // This works on right eye because it is resolved/populated at runtime
-
-            //    if (opaqueOnlyEffects > 0)
-            //    {
-            //        var cmd = cBufferOpaque;
-            //        context.command = cmd;
-
-            //        // We need to use the internal Blit method to copy the camera target or it'll fail
-            //        // on tiled GPU as it won't be able to resolve
-            //        int tempTarget0 = m_TargetPool.Get();
-            //        context.GetScreenSpaceTemporaryRT(cmd, tempTarget0, 0, sourceFormat);
-            //        cmd.BuiltinBlit(cameraTarget, tempTarget0, RuntimeUtilities.copyStdMaterial, stopNaNPropagation ? 1 : 0);
-            //        context.source = tempTarget0;
-
-            //        int tempTarget1 = -1;
-
-            //        if (opaqueOnlyEffects > 1)
-            //        {
-            //            tempTarget1 = m_TargetPool.Get();
-            //            context.GetScreenSpaceTemporaryRT(cmd, tempTarget1, 0, sourceFormat);
-            //            context.destination = tempTarget1;
-            //        }
-            //        else context.destination = cameraTarget;
-
-            //        if (isScreenSpaceReflectionsActive)
-            //        {
-            //            ssrRenderer.Render(context);
-            //            opaqueOnlyEffects--;
-            //            var prevSource = context.source;
-            //            context.source = context.destination;
-            //            context.destination = opaqueOnlyEffects == 1 ? cameraTarget : prevSource;
-            //        }
-
-            //        if (isFogActive)
-            //        {
-            //            fog.Render(context);
-            //            opaqueOnlyEffects--;
-            //            var prevSource = context.source;
-            //            context.source = context.destination;
-            //            context.destination = opaqueOnlyEffects == 1 ? cameraTarget : prevSource;
-            //        }
-
-            //        if (hasCustomOpaqueOnlyEffects)
-            //            RenderOpaqueOnly(context);
-
-            //        if (opaqueOnlyEffects > 1)
-            //            cmd.ReleaseTemporaryRT(tempTarget1);
-
-            //        cmd.ReleaseTemporaryRT(tempTarget0);
-            //    }
-            //}
-
-            //// Post-transparency stack
-            //// Same as before, first blit needs to use the builtin Blit command to properly handle
-            //// tiled GPUs
-            //int tempRt = m_TargetPool.Get();
-            //context.GetScreenSpaceTemporaryRT(cBufferBeforeStack, tempRt, 0, sourceFormat, RenderTextureReadWrite.sRGB);
-            //cBufferBeforeStack.BuiltinBlit(cameraTarget, tempRt, RuntimeUtilities.copyStdMaterial, stopNaNPropagation ? 1 : 0);
-
-            //if (!NaNKilled)
-            //    NaNKilled = stopNaNPropagation;
-
-            //context.command = cBufferBeforeStack;
-            //context.source = tempRt;
-            //context.destination = cameraTarget;
-            //Render(context);
-            //cBufferBeforeStack.ReleaseTemporaryRT(tempRt);
         }
 
         void LoadCommandBuffers()
@@ -494,7 +360,6 @@ namespace UnityEngine.Rendering.PostProcessing
 
             TextureLerper.instance.EndFrame();
             loaded = true;
-
         }
 
         void UpdateCommandBuffers()
@@ -508,6 +373,7 @@ namespace UnityEngine.Rendering.PostProcessing
 
             BuildTemporalAntialising(context);
             int lastTarget = BuildBeforeStack(context);
+
 
             if (lastTarget > -1)
                 context.command.ReleaseTemporaryRT(lastTarget);
@@ -639,14 +505,8 @@ namespace UnityEngine.Rendering.PostProcessing
                 //}
             }
 
-            var taaTarget = m_TargetPool.Get();
             var finalDestination = context.destination;
-            context.GetScreenSpaceTemporaryRT(context.command, taaTarget, 0, context.sourceFormat);
-            context.destination = taaTarget;
             temporalAntialiasing.Render(context);
-            cBufferTAA.BuiltinBlit(taaTarget, finalDestination, RuntimeUtilities.copyStdMaterial, stopNaNPropagation ? 1 : 0);
-            context.source = taaTarget;
-            context.destination = finalDestination;
         }
 
         int BuildBeforeStack(PostProcessRenderContext context)
@@ -681,7 +541,6 @@ namespace UnityEngine.Rendering.PostProcessing
             context.source = tempRt;
             context.destination = cameraTarget;
 
-            context.command = cBufferStack;
 
             // Builtin stack
             lastTarget = RenderBuiltins(context, true, tempRt);         //True because this is final pass
@@ -1064,6 +923,7 @@ namespace UnityEngine.Rendering.PostProcessing
             properties.SetVector(ShaderIDs.UVTransform, SystemInfo.graphicsUVStartsAtTop ? new Vector4(1.0f, -1.0f, 0.0f, 1.0f) : new Vector4(1.0f, 1.0f, 0.0f, 0.0f));
         }
 
+
         int RenderBuiltins(PostProcessRenderContext context, bool isFinalPass, int releaseTargetAfterUse = -1)
         {
             var uberSheet = context.propertySheets.Get(context.resources.shaders.uber);
@@ -1139,7 +999,6 @@ namespace UnityEngine.Rendering.PostProcessing
             if (context.bloomBufferNameID > -1) cmd.ReleaseTemporaryRT(context.bloomBufferNameID);
 
             cmd.EndSample("BuiltinStack");
-
             return tempTarget;
         }
 
