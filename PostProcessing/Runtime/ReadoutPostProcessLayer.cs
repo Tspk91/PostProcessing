@@ -505,8 +505,13 @@ namespace UnityEngine.Rendering.PostProcessing
                 //}
             }
 
+            var taaTarget = m_TargetPool.Get();
             var finalDestination = context.destination;
+            context.GetScreenSpaceTemporaryRT(context.command, taaTarget, 0, context.sourceFormat);
+            context.destination = taaTarget;
             temporalAntialiasing.Render(context);
+            context.source = taaTarget;
+            context.destination = finalDestination;
         }
 
         int BuildBeforeStack(PostProcessRenderContext context)
