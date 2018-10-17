@@ -477,36 +477,32 @@ namespace UnityEngine.Rendering.PostProcessing
             if (!context.IsTemporalAntialiasingActive())
                 return;
 
+            var finalDestination = context.destination;
+
             // Post-transparency stack
             // Same as before, first blit needs to use the builtin Blit command to properly handle
             // tiled GPUs
             int tempRt = m_TargetPool.Get();
             context.GetScreenSpaceTemporaryRT(cBufferTAA, tempRt, 0, sourceFormat, RenderTextureReadWrite.sRGB);
-            cBufferTAA.BuiltinBlit(cameraTarget, tempRt, RuntimeUtilities.copyStdMaterial, stopNaNPropagation ? 1 : 0);
+            //cBufferTAA.BuiltinBlit(cameraTarget, tempRt, RuntimeUtilities.copyStdMaterial, stopNaNPropagation ? 1 : 0);
 
             if (!NaNKilled)
                 NaNKilled = stopNaNPropagation;
 
             context.command = cBufferTAA;
-            context.source = tempRt;
-            context.destination = cameraTarget;
+            context.source = context.destination;
+            context.destination = tempRt;
 
-            if (!RuntimeUtilities.scriptableRenderPipelineActive)
-            {
-                /*if (context.stereoActive)
-                {
-                    // We only need to configure all of this once for stereo, during OnPreCull
-                    if (context.camera.stereoActiveEye != Camera.MonoOrStereoscopicEye.Right)
-                        temporalAntialiasing.ConfigureStereoJitteredProjectionMatrices(context);
-                }
-                else
-                {*/
-                    temporalAntialiasing.ConfigureJitteredProjectionMatrix(context);
-                //}
-            }
+            temporalAntialiasing.ConfigureJitteredProjectionMatrix(context);
 
-            var finalDestination = context.destination;
             temporalAntialiasing.Render(context);
+
+            context.source = context.destination;
+            context.destination = finalDestination;
+
+            cBufferTAA.BlitFullscreenTriangle(context.source, context.destination);
+
+            cBufferTAA.ReleaseTemporaryRT(tempRt);
         }
 
         int BuildBeforeStack(PostProcessRenderContext context)
