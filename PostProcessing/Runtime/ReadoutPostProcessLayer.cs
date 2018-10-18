@@ -428,7 +428,11 @@ namespace UnityEngine.Rendering.PostProcessing
                 // on tiled GPU as it won't be able to resolve
                 int tempTarget0 = m_TargetPool.Get();
                 context.GetScreenSpaceTemporaryRT(cmd, tempTarget0, 0, sourceFormat);
-                cmd.BuiltinBlit(cameraTarget, tempTarget0, RuntimeUtilities.copyStdMaterial, stopNaNPropagation ? 1 : 0);
+
+                if (!NaNKilled)
+                    NaNKilled = stopNaNPropagation;
+
+                cmd.BuiltinBlit(cameraTarget, tempTarget0, RuntimeUtilities.copyStdMaterial, !NaNKilled && stopNaNPropagation ? 1 : 0);
                 context.source = tempTarget0;
 
                 int tempTarget1 = -1;
@@ -484,23 +488,17 @@ namespace UnityEngine.Rendering.PostProcessing
             // tiled GPUs
             int tempRt = m_TargetPool.Get();
             context.GetScreenSpaceTemporaryRT(cBufferTAA, tempRt, 0, sourceFormat, RenderTextureReadWrite.sRGB);
-            //cBufferTAA.BuiltinBlit(cameraTarget, tempRt, RuntimeUtilities.copyStdMaterial, stopNaNPropagation ? 1 : 0);
 
             if (!NaNKilled)
                 NaNKilled = stopNaNPropagation;
 
+            cBufferTAA.BuiltinBlit(context.destination, tempRt, RuntimeUtilities.copyStdMaterial, !NaNKilled && stopNaNPropagation ? 1 : 0);
+
             context.command = cBufferTAA;
-            context.source = context.destination;
-            context.destination = tempRt;
+            context.source = tempRt;
 
             temporalAntialiasing.ConfigureJitteredProjectionMatrix(context);
-
             temporalAntialiasing.Render(context);
-
-            context.source = context.destination;
-            context.destination = finalDestination;
-
-            cBufferTAA.BlitFullscreenTriangle(context.source, context.destination);
 
             cBufferTAA.ReleaseTemporaryRT(tempRt);
         }
@@ -512,7 +510,11 @@ namespace UnityEngine.Rendering.PostProcessing
 
             int lastTarget = m_TargetPool.Get();
             context.GetScreenSpaceTemporaryRT(cBufferBeforeStack, lastTarget, 0, sourceFormat, RenderTextureReadWrite.sRGB);
-            cBufferBeforeStack.BuiltinBlit(cameraTarget, lastTarget, RuntimeUtilities.copyStdMaterial, stopNaNPropagation ? 1 : 0);
+
+            if (!NaNKilled)
+                NaNKilled = stopNaNPropagation;
+
+            cBufferBeforeStack.BuiltinBlit(cameraTarget, lastTarget, RuntimeUtilities.copyStdMaterial, !NaNKilled && stopNaNPropagation ? 1 : 0);
 
             context.command = cBufferBeforeStack;
             context.source = lastTarget;
