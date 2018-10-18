@@ -70,7 +70,7 @@ namespace UnityEngine.Rendering.PostProcessing
 
             var sheet = context.propertySheets.Get(context.resources.shaders.grainBaker);
             sheet.properties.Clear();
-            sheet.properties.SetFloat(ShaderIDs.Phase, time % 10f);
+            //sheet.properties.SetFloat(ShaderIDs.Phase, time % 10f); we touch this in UpdateGrain
 
             context.command.BeginSample("GrainLookup");
             context.command.BlitFullscreenTriangle(BuiltinRenderTextureType.None, m_GrainLookupRT, sheet, settings.colored.value ? 1 : 0);
@@ -81,7 +81,7 @@ namespace UnityEngine.Rendering.PostProcessing
             uberSheet.EnableKeyword("GRAIN");
             uberSheet.properties.SetTexture(ShaderIDs.GrainTex, m_GrainLookupRT);
             uberSheet.properties.SetVector(ShaderIDs.Grain_Params1, new Vector2(settings.lumContrib.value, settings.intensity.value * 20f));
-            uberSheet.properties.SetVector(ShaderIDs.Grain_Params2, new Vector4((float)context.width / (float)m_GrainLookupRT.width / settings.size.value, (float)context.height / (float)m_GrainLookupRT.height / settings.size.value, rndOffsetX, rndOffsetY));
+            //uberSheet.properties.SetVector(ShaderIDs.Grain_Params2, new Vector4((float)context.width / (float)m_GrainLookupRT.width / settings.size.value, (float)context.height / (float)m_GrainLookupRT.height / settings.size.value, rndOffsetX, rndOffsetY)); we touch this in UpdateGrain
         }
 
         RenderTextureFormat GetLookupFormat()
@@ -97,6 +97,21 @@ namespace UnityEngine.Rendering.PostProcessing
             RuntimeUtilities.Destroy(m_GrainLookupRT);
             m_GrainLookupRT = null;
             m_SampleIndex = 0;
+        }
+
+        //Readout special thomas
+        public void UpdateGrain(PostProcessRenderContext context)
+        {
+            float time = Time.realtimeSinceStartup;
+            float rndOffsetX = HaltonSeq.Get(m_SampleIndex & 1023, 2);
+            float rndOffsetY = HaltonSeq.Get(m_SampleIndex & 1023, 3);
+
+            if (++m_SampleIndex >= k_SampleCount)
+                m_SampleIndex = 0;
+
+            Shader.SetGlobalFloat(ShaderIDs.Phase, time % 10f);
+
+            Shader.SetGlobalVector(ShaderIDs.Grain_Params2, new Vector4((float)context.width / (float)m_GrainLookupRT.width / settings.size.value, (float)context.height / (float)m_GrainLookupRT.height / settings.size.value, rndOffsetX, rndOffsetY));
         }
     }
     

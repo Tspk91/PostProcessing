@@ -365,7 +365,11 @@ namespace UnityEngine.Rendering.PostProcessing
         void UpdateCommandBuffers()
         {
             var context = currentContext;
+
             NaNKilled = false;
+
+            //Custom grain update
+            ((GrainRenderer)(GetBundle<Grain>().renderer)).UpdateGrain(context);
 
             context.command = cBufferTAA;
             context.camera = m_Camera;
@@ -373,7 +377,6 @@ namespace UnityEngine.Rendering.PostProcessing
 
             BuildTemporalAntialising(context);
             int lastTarget = BuildBeforeStack(context);
-
 
             if (lastTarget > -1)
                 context.command.ReleaseTemporaryRT(lastTarget);
