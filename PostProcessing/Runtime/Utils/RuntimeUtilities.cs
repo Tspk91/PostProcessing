@@ -192,6 +192,21 @@ namespace UnityEngine.Rendering.PostProcessing
             }
         }
 
+        static Mesh currentActiveMesh;
+        public static Mesh CurrentActiveMesh
+        {
+            get
+            {
+                if (currentActiveMesh == null)
+                    currentActiveMesh = fullscreenTriangle;
+                return currentActiveMesh;
+            }
+            set
+            {
+                currentActiveMesh = value;
+            }
+        }
+
         static Material s_CopyStdMaterial;
         public static Material copyStdMaterial
         {
@@ -271,7 +286,7 @@ namespace UnityEngine.Rendering.PostProcessing
             if (clear)
                 cmd.ClearRenderTarget(true, true, Color.clear);
 
-            cmd.DrawMesh(fullscreenTriangle, Matrix4x4.identity, copyMaterial, 0, 0);
+            cmd.DrawMesh(CurrentActiveMesh, Matrix4x4.identity, copyMaterial, 0, 0);
         }
 
         public static void BlitFullscreenTriangle(this CommandBuffer cmd, RenderTargetIdentifier source, RenderTargetIdentifier destination, PropertySheet propertySheet, int pass, RenderBufferLoadAction loadAction)
@@ -301,7 +316,7 @@ namespace UnityEngine.Rendering.PostProcessing
             if (clear)
                 cmd.ClearRenderTarget(true, true, Color.clear);
 
-            cmd.DrawMesh(fullscreenTriangle, Matrix4x4.identity, propertySheet.material, 0, pass, propertySheet.properties);
+            cmd.DrawMesh(currentActiveMesh, Matrix4x4.identity, propertySheet.material, 0, pass, propertySheet.properties);
             #endif
         }
 
@@ -321,7 +336,7 @@ namespace UnityEngine.Rendering.PostProcessing
                                                        depth, RenderBufferLoadAction.Load, RenderBufferStoreAction.Store);
             }
 
-            cmd.DrawMesh(fullscreenTriangle, Matrix4x4.identity, propertySheet.material, 0, pass, propertySheet.properties);
+            cmd.DrawMesh(CurrentActiveMesh, Matrix4x4.identity, propertySheet.material, 0, pass, propertySheet.properties);
         }
 
         public static void BlitFullscreenTriangle(this CommandBuffer cmd, RenderTargetIdentifier source, RenderTargetIdentifier[] destinations, RenderTargetIdentifier depth, PropertySheet propertySheet, int pass, bool clear = false)
@@ -332,7 +347,7 @@ namespace UnityEngine.Rendering.PostProcessing
             if (clear)
                 cmd.ClearRenderTarget(true, true, Color.clear);
 
-            cmd.DrawMesh(fullscreenTriangle, Matrix4x4.identity, propertySheet.material, 0, pass, propertySheet.properties);
+            cmd.DrawMesh(CurrentActiveMesh, Matrix4x4.identity, propertySheet.material, 0, pass, propertySheet.properties);
         }
 
         public static void BlitFullscreenTriangle(Texture source, RenderTexture destination, Material material, int pass)
@@ -347,7 +362,7 @@ namespace UnityEngine.Rendering.PostProcessing
                 destination.DiscardContents(true, false);
 
             Graphics.SetRenderTarget(destination);
-            Graphics.DrawMeshNow(fullscreenTriangle, Matrix4x4.identity);
+            Graphics.DrawMeshNow(CurrentActiveMesh, Matrix4x4.identity);
             RenderTexture.active = oldRt;
         }
 
@@ -366,6 +381,7 @@ namespace UnityEngine.Rendering.PostProcessing
             cmd.SetRenderTarget(dest, RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store);
             dest = BuiltinRenderTextureType.CurrentActive;
             #endif
+
             cmd.Blit(source, dest, mat, pass);
         }
 
