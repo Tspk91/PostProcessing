@@ -369,7 +369,9 @@ namespace UnityEngine.Rendering.PostProcessing
             NaNKilled = false;
 
             //Custom grain update
-            ((GrainRenderer)(GetBundle<Grain>().renderer)).UpdateGrain(context);
+            var grain = GetBundle<Grain>();
+            if (grain.settings.enabled)
+                ((GrainRenderer)grain.renderer).UpdateGrain(context);
 
             context.command = cBufferTAA;
             context.camera = m_Camera;
