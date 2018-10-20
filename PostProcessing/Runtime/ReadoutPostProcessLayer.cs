@@ -132,7 +132,7 @@ namespace UnityEngine.Rendering.PostProcessing
             m_Camera.AddCommandBuffer(CameraEvent.BeforeReflections, cBufferBeforeReflections);
             m_Camera.AddCommandBuffer(CameraEvent.BeforeLighting, cBufferBeforeLighting);
             m_Camera.AddCommandBuffer(CameraEvent.BeforeImageEffectsOpaque, cBufferOpaque);
-            m_Camera.AddCommandBuffer(CameraEvent.BeforeImageEffectsOpaque, cBufferTAA);
+            m_Camera.AddCommandBuffer(CameraEvent.AfterImageEffectsOpaque, cBufferTAA);
             m_Camera.AddCommandBuffer(CameraEvent.BeforeImageEffects, cBufferBeforeStack);
             m_Camera.AddCommandBuffer(CameraEvent.BeforeImageEffects, cBufferStack);
 
@@ -228,10 +228,9 @@ namespace UnityEngine.Rendering.PostProcessing
                 m_Camera.RemoveCommandBuffer(CameraEvent.BeforeReflections, cBufferBeforeReflections);
                 m_Camera.RemoveCommandBuffer(CameraEvent.BeforeLighting, cBufferBeforeLighting);
                 m_Camera.RemoveCommandBuffer(CameraEvent.BeforeImageEffectsOpaque, cBufferOpaque);
-                m_Camera.RemoveCommandBuffer(CameraEvent.BeforeImageEffectsOpaque, cBufferTAA);
+                m_Camera.RemoveCommandBuffer(CameraEvent.AfterImageEffectsOpaque, cBufferTAA);
                 m_Camera.RemoveCommandBuffer(CameraEvent.BeforeImageEffects, cBufferBeforeStack);
                 m_Camera.RemoveCommandBuffer(CameraEvent.BeforeImageEffects, cBufferStack);
-                m_Camera.RemoveAllCommandBuffers();
             }
 
             temporalAntialiasing.Release();
@@ -373,7 +372,12 @@ namespace UnityEngine.Rendering.PostProcessing
             if (grain.settings.enabled)
                 ((GrainRenderer)grain.renderer).UpdateGrain(context);
 
-            context.command = cBufferTAA;
+			//Custom vignette update
+			var vignette = GetBundle<Vignette>();
+			if (vignette.settings.enabled)
+				((VignetteRenderer) vignette.renderer).UpdateVignette(context);
+
+			context.command = cBufferTAA;
             context.camera = m_Camera;
             TextureLerper.instance.BeginFrame(context);
 
