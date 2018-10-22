@@ -99,6 +99,13 @@ namespace UnityEngine.Rendering.PostProcessing
         readonly List<PostProcessEffectRenderer> m_ActiveEffects = new List<PostProcessEffectRenderer>();
         readonly List<RenderTargetIdentifier> m_Targets = new List<RenderTargetIdentifier>();
 
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            Shader.SetGlobalFloat("_Saturation", 1f);
+        }
+#endif
+
         void OnEnable()
         {
             Init(null);
