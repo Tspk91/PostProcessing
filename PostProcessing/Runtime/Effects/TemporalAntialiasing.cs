@@ -2,21 +2,41 @@ using System;
 
 namespace UnityEngine.Rendering.PostProcessing
 {
+    /// <summary>
+    /// This class holds settings for the Temporal Anti-aliasing (TAA) effect.
+    /// </summary>
     [Serializable]
     public sealed class TemporalAntialiasing
     {
-        [Tooltip("The diameter (in texels) inside which jitter samples are spread. Smaller values result in crisper but more aliased output, while larger values result in more stable but blurrier output.")]
+        /// <summary>
+        /// The diameter (in texels) inside which jitter samples are spread. Smaller values result
+        /// in crisper but more aliased output, while larger values result in more stable but
+        /// blurrier output.
+        /// </summary>
+        [Tooltip("The diameter (in texels) inside which jitter samples are spread. Smaller values result in crisper but more aliased output, while larger values result in more stable, but blurrier, output.")]
         [Range(0.1f, 1f)]
         public float jitterSpread = 0.75f;
 
+        /// <summary>
+        /// Controls the amount of sharpening applied to the color buffer. High values may introduce
+        /// dark-border artifacts.
+        /// </summary>
         [Tooltip("Controls the amount of sharpening applied to the color buffer. High values may introduce dark-border artifacts.")]
         [Range(0f, 3f)]
         public float sharpness = 0.25f;
 
+        /// <summary>
+        /// The blend coefficient for a stationary fragment. Controls the percentage of history
+        /// sample blended into the final color.
+        /// </summary>
         [Tooltip("The blend coefficient for a stationary fragment. Controls the percentage of history sample blended into the final color.")]
         [Range(0f, 0.99f)]
         public float stationaryBlending = 0.95f;
 
+        /// <summary>
+        /// The blend coefficient for a fragment with significant motion. Controls the percentage of
+        /// history sample blended into the final color.
+        /// </summary>
         [Tooltip("The blend coefficient for a fragment with significant motion. Controls the percentage of history sample blended into the final color.")]
         [Range(0f, 0.99f)]
         public float motionBlending = 0.85f;
