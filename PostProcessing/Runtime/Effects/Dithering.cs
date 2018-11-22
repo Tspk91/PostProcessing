@@ -4,7 +4,7 @@ using UnityEngine.Assertions;
 namespace UnityEngine.Rendering.PostProcessing
 {
     [Serializable]
-    internal sealed class Dithering
+    public sealed class Dithering
     {
         int m_NoiseTextureIndex = 0;
 

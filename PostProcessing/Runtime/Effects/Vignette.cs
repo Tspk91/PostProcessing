@@ -94,7 +94,7 @@ namespace UnityEngine.Rendering.PostProcessing
         }
     }
 
-    internal sealed class VignetteRenderer : PostProcessEffectRenderer<Vignette>
+    public sealed class VignetteRenderer : PostProcessEffectRenderer<Vignette>
     {
         public override void Render(PostProcessRenderContext context)
         {

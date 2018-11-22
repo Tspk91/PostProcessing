@@ -221,7 +221,7 @@ namespace UnityEngine.Rendering.PostProcessing
 
         #region Rendering
 
-        internal static PostProcessResources s_Resources;
+        public static PostProcessResources s_Resources;
 
         static Mesh s_FullscreenTriangle;
 
@@ -672,7 +672,7 @@ namespace UnityEngine.Rendering.PostProcessing
             RenderTexture.active = oldRt;
         }
 
-        public static void BuiltinBlit(this CommandBuffer cmd, Rendering.RenderTargetIdentifier source, Rendering.RenderTargetIdentifier dest)
+        public static void BuiltinBlit(this CommandBuffer cmd, Rendering.RenderTargetIdentifier source, Rendering.RenderTargetIdentifier destination)
         {
             #if UNITY_2018_2_OR_NEWER
             cmd.SetRenderTarget(destination, RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store);
