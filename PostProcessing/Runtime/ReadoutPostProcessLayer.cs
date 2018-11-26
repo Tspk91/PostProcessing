@@ -261,7 +261,8 @@ namespace UnityEngine.Rendering.PostProcessing
 
         private void Update()
         {
-            temporalAntialiasing.UpdateJitterOffset();
+            if (antialiasingMode == PostProcessLayer.Antialiasing.TemporalAntialiasing)
+                temporalAntialiasing.UpdateJitterOffset();
         }
 
         // Called everytime the user resets the component from the inspector and more importantly
@@ -296,8 +297,11 @@ namespace UnityEngine.Rendering.PostProcessing
 #if UNITY_2018_2_OR_NEWER
             if (!m_Camera.usePhysicalProperties)
 #endif
-                m_Camera.ResetProjectionMatrix();
-            m_Camera.nonJitteredProjectionMatrix = m_Camera.projectionMatrix;
+                if (antialiasingMode == PostProcessLayer.Antialiasing.TemporalAntialiasing)
+                {
+                    m_Camera.ResetProjectionMatrix();
+                    m_Camera.nonJitteredProjectionMatrix = m_Camera.projectionMatrix;
+                }
 
 #if !UNITY_SWITCH
             if (m_Camera.stereoEnabled)
@@ -360,7 +364,8 @@ namespace UnityEngine.Rendering.PostProcessing
 
             BuildDeferredAmbientOcclusion(context);
             BuildBeforeOpaqueEffects(context);
-            BuildTemporalAntialising(context);
+            if (antialiasingMode == PostProcessLayer.Antialiasing.TemporalAntialiasing)
+                BuildTemporalAntialising(context);
             int lastTarget = BuildBeforeStack(context);
             BuildStack(context, lastTarget);
 
@@ -379,16 +384,17 @@ namespace UnityEngine.Rendering.PostProcessing
             if (grain.settings.enabled)
                 ((GrainRenderer)grain.renderer).UpdateGrain(context);
 
-			//Custom vignette update
-			var vignette = GetBundle<Vignette>();
-			if (vignette.settings.enabled)
-				((VignetteRenderer) vignette.renderer).UpdateVignette(context);
+            //Custom vignette update
+            var vignette = GetBundle<Vignette>();
+            if (vignette.settings.enabled)
+                ((VignetteRenderer)vignette.renderer).UpdateVignette(context);
 
-			context.command = cBufferTAA;
+            context.command = cBufferTAA;
             context.camera = m_Camera;
             TextureLerper.instance.BeginFrame(context);
 
-            BuildTemporalAntialising(context);
+            if (antialiasingMode == PostProcessLayer.Antialiasing.TemporalAntialiasing)
+                BuildTemporalAntialising(context);
             int lastTarget = BuildBeforeStack(context);
 
             if (lastTarget > -1)
@@ -547,6 +553,7 @@ namespace UnityEngine.Rendering.PostProcessing
         void BuildStack(PostProcessRenderContext context, int lastTarget)
         {
             cBufferStack.Clear();
+            SetupContext(context);
 
             var tempRt = lastTarget < 0 ? m_TargetPool.Get() : lastTarget;
             context.GetScreenSpaceTemporaryRT(cBufferStack, tempRt, 0, context.sourceFormat);
