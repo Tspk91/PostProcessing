@@ -518,6 +518,7 @@ namespace UnityEngine.Rendering.PostProcessing
 
             context.command = cBufferTAA;
             context.source = tempRt;
+            context.destination = finalDestination;
 
             temporalAntialiasing.ConfigureJitteredProjectionMatrix(context);
             temporalAntialiasing.Render(context);
