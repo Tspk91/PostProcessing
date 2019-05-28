@@ -37,6 +37,9 @@ namespace UnityEngine.Rendering.PostProcessing
         }
     }
 
+#if UNITY_2017_1_OR_NEWER
+    [UnityEngine.Scripting.Preserve]
+#endif
     internal sealed class ChromaticAberrationRenderer : PostProcessEffectRenderer<ChromaticAberration>
     {
         Texture2D m_InternalSpectralLut;
@@ -72,7 +75,9 @@ namespace UnityEngine.Rendering.PostProcessing
             }
             
             var sheet = context.uberSheet;
-            sheet.EnableKeyword(settings.fastMode
+            bool fastMode = settings.fastMode || SystemInfo.graphicsDeviceType == GraphicsDeviceType.OpenGLES2;
+
+            sheet.EnableKeyword(fastMode
                 ? "CHROMATIC_ABERRATION_LOW"
                 : "CHROMATIC_ABERRATION"
             );
