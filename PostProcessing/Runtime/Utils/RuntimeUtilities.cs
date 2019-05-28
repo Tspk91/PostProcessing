@@ -14,6 +14,8 @@ namespace UnityEngine.Rendering.PostProcessing
 {
     using SceneManagement;
     using UnityObject = UnityEngine.Object;
+    using LoadAction = RenderBufferLoadAction;
+    using StoreAction = RenderBufferStoreAction;
 
     /// <summary>
     /// A set of runtime utilities used by the post-processing stack.
@@ -200,7 +202,7 @@ namespace UnityEngine.Rendering.PostProcessing
                 var format = TextureFormat.RGBAHalf;
                 if (!format.IsSupported())
                     format = TextureFormat.ARGB32;
-                    
+
                 texture = new Texture2D(size * size, size, format, false, true)
                 {
                     name = "Strip Lut" + size,
@@ -221,8 +223,7 @@ namespace UnityEngine.Rendering.PostProcessing
 
         #region Rendering
 
-        internal static PostProcessResources s_Resources;
-
+        static PostProcessResources s_Resources;
         static Mesh s_FullscreenTriangle;
 
         /// <summary>
@@ -380,6 +381,24 @@ namespace UnityEngine.Rendering.PostProcessing
             }
         }
 
+        internal static void UpdateResources(PostProcessResources resources)
+        {
+            Destroy(s_CopyMaterial);
+            Destroy(s_CopyStdMaterial);
+            Destroy(s_CopyFromTexArrayMaterial);
+            Destroy(s_CopyStdFromDoubleWideMaterial);
+
+            s_CopyMaterial = null;
+            s_CopyStdMaterial = null;
+            s_CopyFromTexArrayMaterial = null;
+            s_CopyStdFromDoubleWideMaterial = null;
+
+            s_CopySheet = null;
+            s_CopyFromTexArraySheet = null;
+
+            s_Resources = resources;
+        }
+
         /// <summary>
         /// Sets the current render target using specified <see cref="RenderBufferLoadAction"/>.
         /// </summary>
@@ -431,7 +450,7 @@ namespace UnityEngine.Rendering.PostProcessing
         public static void BlitFullscreenTriangle(this CommandBuffer cmd, RenderTargetIdentifier source, RenderTargetIdentifier destination, bool clear = false, Rect? viewport = null)
         {
             cmd.SetGlobalTexture(ShaderIDs.MainTex, source);
-            cmd.SetRenderTargetWithLoadStoreAction(destination, RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store);
+            cmd.SetRenderTargetWithLoadStoreAction(destination, viewport == null ? LoadAction.DontCare : LoadAction.Load, StoreAction.Store);
 
             if (viewport != null)
                 cmd.SetViewport(viewport.Value);
@@ -456,11 +475,13 @@ namespace UnityEngine.Rendering.PostProcessing
         {
             cmd.SetGlobalTexture(ShaderIDs.MainTex, source);
             #if UNITY_2018_2_OR_NEWER
-            bool clear = (loadAction == RenderBufferLoadAction.Clear);
+            bool clear = (loadAction == LoadAction.Clear);
+            if(clear)
+                loadAction = LoadAction.DontCare;
             #else
             bool clear = false;
             #endif
-            cmd.SetRenderTargetWithLoadStoreAction(destination, clear ? RenderBufferLoadAction.DontCare : loadAction, RenderBufferStoreAction.Store);
+            cmd.SetRenderTargetWithLoadStoreAction(destination, viewport == null ? loadAction : LoadAction.Load, StoreAction.Store);
 
             if (viewport != null)
                 cmd.SetViewport(viewport.Value);
@@ -484,10 +505,10 @@ namespace UnityEngine.Rendering.PostProcessing
         public static void BlitFullscreenTriangle(this CommandBuffer cmd, RenderTargetIdentifier source, RenderTargetIdentifier destination, PropertySheet propertySheet, int pass, bool clear = false, Rect? viewport = null)
         {
             #if UNITY_2018_2_OR_NEWER
-            cmd.BlitFullscreenTriangle(source, destination, propertySheet, pass, clear ? RenderBufferLoadAction.Clear : RenderBufferLoadAction.DontCare, viewport);
+            cmd.BlitFullscreenTriangle(source, destination, propertySheet, pass, clear ? LoadAction.Clear : LoadAction.DontCare, viewport);
             #else
             cmd.SetGlobalTexture(ShaderIDs.MainTex, source);
-            cmd.SetRenderTargetWithLoadStoreAction(destination, RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store);
+            cmd.SetRenderTargetWithLoadStoreAction(destination, viewport == null ? LoadAction.DontCare : LoadAction.Load, StoreAction.Store);
 
             if (viewport != null)
                 cmd.SetViewport(viewport.Value);
@@ -597,17 +618,16 @@ namespace UnityEngine.Rendering.PostProcessing
         public static void BlitFullscreenTriangle(this CommandBuffer cmd, RenderTargetIdentifier source, RenderTargetIdentifier destination, RenderTargetIdentifier depth, PropertySheet propertySheet, int pass, bool clear = false, Rect? viewport = null)
         {
             cmd.SetGlobalTexture(ShaderIDs.MainTex, source);
-            
+
+            LoadAction loadAction = viewport == null ? LoadAction.DontCare : LoadAction.Load;
             if (clear)
             {
-                cmd.SetRenderTargetWithLoadStoreAction(destination, RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store,
-                                                       depth, RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store);
+                cmd.SetRenderTargetWithLoadStoreAction(destination, loadAction, StoreAction.Store, depth, loadAction, StoreAction.Store);
                 cmd.ClearRenderTarget(true, true, Color.clear);
             }
             else
             {
-                cmd.SetRenderTargetWithLoadStoreAction(destination, RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store,
-                                                       depth, RenderBufferLoadAction.Load, RenderBufferStoreAction.Store);
+                cmd.SetRenderTargetWithLoadStoreAction(destination, loadAction, StoreAction.Store, depth, LoadAction.Load, StoreAction.Store);
             }
 
             if (viewport != null)
@@ -761,7 +781,7 @@ namespace UnityEngine.Rendering.PostProcessing
             {
 #if UNITY_EDITOR
                 return isSinglePassStereoSelected && Application.isPlaying;
-#elif UNITY_SWITCH
+#elif !ENABLE_VR
                 return false;
 #elif UNITY_2017_2_OR_NEWER
                 return UnityEngine.XR.XRSettings.eyeTextureDesc.vrUsage == VRTextureUsage.TwoEyes;
@@ -780,7 +800,7 @@ namespace UnityEngine.Rendering.PostProcessing
             {
 #if UNITY_EDITOR
                 return UnityEditor.PlayerSettings.virtualRealitySupported;
-#elif UNITY_XBOXONE || UNITY_SWITCH
+#elif UNITY_XBOXONE || !ENABLE_VR
                 return false;
 #elif UNITY_2017_2_OR_NEWER
                 return UnityEngine.XR.XRSettings.enabled;
