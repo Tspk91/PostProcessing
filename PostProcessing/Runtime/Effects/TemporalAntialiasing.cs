@@ -61,15 +61,13 @@ namespace UnityEngine.Rendering.PostProcessing
         const int k_SampleCount = 8;
         public int sampleIndex { get; private set; }
 
-        public static System.Action<Vector2> onJitterGenerated = delegate { };
-
         // Ping-pong between two history textures as we can't read & write the same target in the
         // same pass
         const int k_NumEyes = 2;
         const int k_NumHistoryTextures = 2;
         readonly RenderTexture[][] m_HistoryTextures = new RenderTexture[k_NumEyes][];
 
-        int[] m_HistoryPingPong = new int[k_NumEyes];
+        readonly int[] m_HistoryPingPong = new int [k_NumEyes];
 
         public bool IsSupported()
         {
@@ -106,18 +104,11 @@ namespace UnityEngine.Rendering.PostProcessing
             return offset;
         }
 
-        public void UpdateJitterOffset()
-        {
-            jitter = GenerateRandomOffset();
-            jitter *= jitterSpread;
-            onJitterGenerated(jitter);
-        }
-
         public Matrix4x4 GetJitteredProjectionMatrix(Camera camera)
         {
             Matrix4x4 cameraProj;
-            //jitter = GenerateRandomOffset() * 20;
-            //jitter *= jitterSpread;
+            jitter = GenerateRandomOffset();
+            jitter *= jitterSpread;
 
             if (jitteredMatrixFunc != null)
             {
@@ -147,8 +138,8 @@ namespace UnityEngine.Rendering.PostProcessing
         {
 #if  UNITY_2017_3_OR_NEWER
             var camera = context.camera;
-            //jitter = GenerateRandomOffset();
-            //jitter *= jitterSpread;
+            jitter = GenerateRandomOffset();
+            jitter *= jitterSpread;
 
             for (var eye = Camera.StereoscopicEye.Left; eye <= Camera.StereoscopicEye.Right; eye++)
             {
@@ -253,7 +244,7 @@ namespace UnityEngine.Rendering.PostProcessing
                 {
                     if (m_HistoryTextures[i] == null)
                         continue;
-
+                    
                     for (int j = 0; j < m_HistoryTextures[i].Length; j++)
                     {
                         RenderTexture.ReleaseTemporary(m_HistoryTextures[i][j]);
@@ -267,7 +258,7 @@ namespace UnityEngine.Rendering.PostProcessing
             sampleIndex = 0;
             m_HistoryPingPong[0] = 0;
             m_HistoryPingPong[1] = 0;
-
+            
             ResetHistory();
         }
     }
