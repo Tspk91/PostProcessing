@@ -823,17 +823,9 @@ namespace UnityEngine.Rendering.PostProcessing
         {
             get
             {
-#if UNITY_EDITOR
-                return UnityEditor.PlayerSettings.virtualRealitySupported;
-#elif UNITY_XBOXONE || !ENABLE_VR
-                return false;
-#elif UNITY_2017_2_OR_NEWER
-                return UnityEngine.XR.XRSettings.enabled;
-#elif UNITY_5_6_OR_NEWER
-                return UnityEngine.VR.VRSettings.enabled;
-#endif
-            }
-        }
+				return UnityEngine.XR.XRSettings.enabled;
+			}
+		}
 
         /// <summary>
         /// Returns <c>true</c> if the target platform is Android and the selected API is OpenGL,

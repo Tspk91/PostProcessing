@@ -27,14 +27,14 @@ namespace UnityEngine.Rendering.PostProcessing
         {
             return enabled.value
                 && shutterAngle.value > 0f
-#if UNITY_EDITOR
+            #if UNITY_EDITOR
                 // Don't render motion blur preview when the editor is not playing as it can in some
                 // cases results in ugly artifacts (i.e. when resizing the game view).
                 && Application.isPlaying
-#endif
+            #endif
                 && SystemInfo.supportsMotionVectors
                 && RenderTextureFormat.RGHalf.IsSupported()
-                && !UnityEngine.XR.XRSettings.enabled; //BAD SHIT TO THE RIGHT -> !RuntimeUtilities.isVREnabled; this shit caused postpro to cancel motion blur if vr is allowed in the game...
+                && !RuntimeUtilities.isVREnabled;
         }
     }
 
@@ -65,11 +65,11 @@ namespace UnityEngine.Rendering.PostProcessing
             if (m_ResetHistory)
             {
                 cmd.BlitFullscreenTriangle(context.source, context.destination);
-				m_ResetHistory = false;
-				cmd.BlitFullscreenTriangle(context.destination, context.source); //return; readout mr.thomas double swap DAYUM! instead of returning, do one more blit to recover correct source and destination
-			}
+                m_ResetHistory = false;
+                return;
+            }
 
-			const float kMaxBlurRadius = 5f;
+            const float kMaxBlurRadius = 5f;
             var vectorRTFormat = RenderTextureFormat.RGHalf;
             var packedRTFormat = RenderTextureFormat.ARGB2101010.IsSupported()
                 ? RenderTextureFormat.ARGB2101010
