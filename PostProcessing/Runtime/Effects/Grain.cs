@@ -47,7 +47,7 @@ namespace UnityEngine.Rendering.PostProcessing
 #if UNITY_2017_1_OR_NEWER
     [UnityEngine.Scripting.Preserve]
 #endif
-    internal sealed class GrainRenderer : PostProcessEffectRenderer<Grain>
+    internal sealed class GrainRenderer : PostProcessEffectRenderer<Grain>, IUpdatableRenderer
     {
         RenderTexture m_GrainLookupRT;
 
@@ -119,7 +119,7 @@ namespace UnityEngine.Rendering.PostProcessing
         }
 
         //Readout special thomas
-        public void UpdateGrain(PostProcessRenderContext context)
+        public void UpdateRender(PostProcessRenderContext context)
         {
             float time = Time.realtimeSinceStartup;
             float rndOffsetX = HaltonSeq.Get(m_SampleIndex & 1023, 2);
@@ -129,7 +129,6 @@ namespace UnityEngine.Rendering.PostProcessing
                 m_SampleIndex = 0;
 
             Shader.SetGlobalFloat(ShaderIDs.Phase, time % 10f);
-
             Shader.SetGlobalVector(ShaderIDs.Grain_Params2, new Vector4((float)context.width / (float)m_GrainLookupRT.width / settings.size.value, (float)context.height / (float)m_GrainLookupRT.height / settings.size.value, rndOffsetX, rndOffsetY));
         }
     }

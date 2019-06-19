@@ -75,4 +75,9 @@ namespace UnityEngine.Rendering.PostProcessing
             this.settings = (T)settings;
         }
     }
+
+	public interface IUpdatableRenderer
+	{
+		void UpdateRender(PostProcessRenderContext context);
+	}
 }

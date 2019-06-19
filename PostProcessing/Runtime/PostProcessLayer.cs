@@ -191,14 +191,18 @@ namespace UnityEngine.Rendering.PostProcessing
 
         bool m_NaNKilled = false;
 
-        // Recycled list - used to reduce GC stress when gathering active effects in a bundle list
-        // on each frame
-        readonly List<PostProcessEffectRenderer> m_ActiveEffects = new List<PostProcessEffectRenderer>();
+		int rebuildCmdBuffers = 2;
+
+		// Recycled list - used to reduce GC stress when gathering active effects in a bundle list
+		// on each frame
+		readonly List<PostProcessEffectRenderer> m_ActiveEffects = new List<PostProcessEffectRenderer>();
         readonly List<RenderTargetIdentifier> m_Targets = new List<RenderTargetIdentifier>();
 
         void OnEnable()
         {
-            Init(null);
+			rebuildCmdBuffers = 2;
+
+			Init(null);
 
             if (!haveBundlesBeenInited)
                 InitBundles();
@@ -222,7 +226,7 @@ namespace UnityEngine.Rendering.PostProcessing
             m_LegacyCmdBufferOpaque = new CommandBuffer { name = "Opaque Only Post-processing" };
             m_LegacyCmdBuffer = new CommandBuffer { name = "Post-processing" };
 
-            m_Camera = GetComponent<Camera>();
+			m_Camera = GetComponent<Camera>();
 
 #if !UNITY_2019_1_OR_NEWER // OnRenderImage (below) implies forceIntoRenderTexture
             m_Camera.forceIntoRenderTexture = true; // Needed when running Forward / LDR / No MSAA
@@ -232,9 +236,9 @@ namespace UnityEngine.Rendering.PostProcessing
             m_Camera.AddCommandBuffer(CameraEvent.BeforeLighting, m_LegacyCmdBufferBeforeLighting);
             m_Camera.AddCommandBuffer(CameraEvent.BeforeImageEffectsOpaque, m_LegacyCmdBufferOpaque);
             m_Camera.AddCommandBuffer(CameraEvent.BeforeImageEffects, m_LegacyCmdBuffer);
-               
-            // Internal context used if no SRP is set
-            m_CurrentContext = new PostProcessRenderContext();
+
+			// Internal context used if no SRP is set
+			m_CurrentContext = new PostProcessRenderContext();
         }
 
 
@@ -354,7 +358,7 @@ namespace UnityEngine.Rendering.PostProcessing
                     m_Camera.RemoveCommandBuffer(CameraEvent.BeforeImageEffectsOpaque, m_LegacyCmdBufferOpaque);
                 if (m_LegacyCmdBuffer != null)
                     m_Camera.RemoveCommandBuffer(CameraEvent.BeforeImageEffects, m_LegacyCmdBuffer);
-            }
+			}
 
             temporalAntialiasing.Release();
             m_LogHistogram.Release();
@@ -479,153 +483,163 @@ namespace UnityEngine.Rendering.PostProcessing
 
         void BuildCommandBuffers()
         {
-            var context = m_CurrentContext;
-            var sourceFormat = m_Camera.allowHDR ? RuntimeUtilities.defaultHDRRenderTextureFormat : RenderTextureFormat.Default;
+			var context = m_CurrentContext;
 
-            if (!RuntimeUtilities.isFloatingPointFormat(sourceFormat))
-                m_NaNKilled = true;
+			if (rebuildCmdBuffers > 0)
+			{
+				rebuildCmdBuffers--;
 
-            context.Reset();
-            context.camera = m_Camera;
-            context.sourceFormat = sourceFormat;
+				var sourceFormat = m_Camera.allowHDR ? RuntimeUtilities.defaultHDRRenderTextureFormat : RenderTextureFormat.Default;
 
-            // TODO: Investigate retaining command buffers on XR multi-pass right eye
-            m_LegacyCmdBufferBeforeReflections.Clear();
-            m_LegacyCmdBufferBeforeLighting.Clear();
-            m_LegacyCmdBufferOpaque.Clear();
-            m_LegacyCmdBuffer.Clear();
+				if (!RuntimeUtilities.isFloatingPointFormat(sourceFormat))
+					m_NaNKilled = true;
 
-            SetupContext(context);
+				context.Reset();
+				context.camera = m_Camera;
+				context.sourceFormat = sourceFormat;
 
-            context.command = m_LegacyCmdBufferOpaque;
-            TextureLerper.instance.BeginFrame(context);
-            UpdateVolumeSystem(context.camera, context.command);
+				// TODO: Investigate retaining command buffers on XR multi-pass right eye
+				m_LegacyCmdBufferBeforeReflections.Clear();
+				m_LegacyCmdBufferBeforeLighting.Clear();
+				m_LegacyCmdBufferOpaque.Clear();
+				m_LegacyCmdBuffer.Clear();
 
-            // Lighting & opaque-only effects
-            var aoBundle = GetBundle<AmbientOcclusion>();
-            var aoSettings = aoBundle.CastSettings<AmbientOcclusion>();
-            var aoRenderer = aoBundle.CastRenderer<AmbientOcclusionRenderer>();
+				SetupContext(context);
 
-            bool aoSupported = aoSettings.IsEnabledAndSupported(context);
-            bool aoAmbientOnly = aoRenderer.IsAmbientOnly(context);
-            bool isAmbientOcclusionDeferred = aoSupported && aoAmbientOnly;
-            bool isAmbientOcclusionOpaque = aoSupported && !aoAmbientOnly;
+				context.command = m_LegacyCmdBufferOpaque;
+				TextureLerper.instance.BeginFrame(context);
+				UpdateVolumeSystem(context.camera, context.command);
 
-            var ssrBundle = GetBundle<ScreenSpaceReflections>();
-            var ssrSettings = ssrBundle.settings;
-            var ssrRenderer = ssrBundle.renderer;
-            bool isScreenSpaceReflectionsActive = ssrSettings.IsEnabledAndSupported(context);
+				// Lighting & opaque-only effects
+				var aoBundle = GetBundle<AmbientOcclusion>();
+				var aoSettings = aoBundle.CastSettings<AmbientOcclusion>();
+				var aoRenderer = aoBundle.CastRenderer<AmbientOcclusionRenderer>();
 
-            // Ambient-only AO is a special case and has to be done in separate command buffers
-            if (isAmbientOcclusionDeferred)
-            {
-                var ao = aoRenderer.Get();
+				bool aoSupported = aoSettings.IsEnabledAndSupported(context);
+				bool aoAmbientOnly = aoRenderer.IsAmbientOnly(context);
+				bool isAmbientOcclusionDeferred = aoSupported && aoAmbientOnly;
+				bool isAmbientOcclusionOpaque = aoSupported && !aoAmbientOnly;
 
-                // Render as soon as possible - should be done async in SRPs when available
-                context.command = m_LegacyCmdBufferBeforeReflections;
-                ao.RenderAmbientOnly(context);
+				var ssrBundle = GetBundle<ScreenSpaceReflections>();
+				var ssrSettings = ssrBundle.settings;
+				var ssrRenderer = ssrBundle.renderer;
+				bool isScreenSpaceReflectionsActive = ssrSettings.IsEnabledAndSupported(context);
 
-                // Composite with GBuffer right before the lighting pass
-                context.command = m_LegacyCmdBufferBeforeLighting;
-                ao.CompositeAmbientOnly(context);
-            }
-            else if (isAmbientOcclusionOpaque)
-            {
-                context.command = m_LegacyCmdBufferOpaque;
-                aoRenderer.Get().RenderAfterOpaque(context);
-            }
+				// Ambient-only AO is a special case and has to be done in separate command buffers
+				if (isAmbientOcclusionDeferred)
+				{
+					var ao = aoRenderer.Get();
 
-            bool isFogActive = fog.IsEnabledAndSupported(context);
-            bool hasCustomOpaqueOnlyEffects = HasOpaqueOnlyEffects(context);
-            int opaqueOnlyEffects = 0;
-            opaqueOnlyEffects += isScreenSpaceReflectionsActive ? 1 : 0;
-            opaqueOnlyEffects += isFogActive ? 1 : 0;
-            opaqueOnlyEffects += hasCustomOpaqueOnlyEffects ? 1 : 0;
+					// Render as soon as possible - should be done async in SRPs when available
+					context.command = m_LegacyCmdBufferBeforeReflections;
+					ao.RenderAmbientOnly(context);
 
-            // This works on right eye because it is resolved/populated at runtime
-            var cameraTarget = new RenderTargetIdentifier(BuiltinRenderTextureType.CameraTarget);
+					// Composite with GBuffer right before the lighting pass
+					context.command = m_LegacyCmdBufferBeforeLighting;
+					ao.CompositeAmbientOnly(context);
+				}
+				else if (isAmbientOcclusionOpaque)
+				{
+					context.command = m_LegacyCmdBufferOpaque;
+					aoRenderer.Get().RenderAfterOpaque(context);
+				}
 
-            if (opaqueOnlyEffects > 0)
-            {
-                var cmd = m_LegacyCmdBufferOpaque;
-                context.command = cmd;
-                context.source = cameraTarget;
-                context.destination = cameraTarget;
-                int srcTarget = -1;
-                int dstTarget = -1;
+				bool isFogActive = fog.IsEnabledAndSupported(context);
+				bool hasCustomOpaqueOnlyEffects = HasOpaqueOnlyEffects(context);
+				int opaqueOnlyEffects = 0;
+				opaqueOnlyEffects += isScreenSpaceReflectionsActive ? 1 : 0;
+				opaqueOnlyEffects += isFogActive ? 1 : 0;
+				opaqueOnlyEffects += hasCustomOpaqueOnlyEffects ? 1 : 0;
 
-                UpdateSrcDstForOpaqueOnly(ref srcTarget, ref dstTarget, context, cameraTarget, opaqueOnlyEffects + 1); // + 1 for blit
+				// This works on right eye because it is resolved/populated at runtime
+				var cameraTarget = new RenderTargetIdentifier(BuiltinRenderTextureType.CameraTarget);
 
-                if (RequiresInitialBlit(m_Camera, context) || opaqueOnlyEffects == 1)
-                {
-                    cmd.BuiltinBlit(context.source, context.destination, RuntimeUtilities.copyStdMaterial, stopNaNPropagation ? 1 : 0);
-                    UpdateSrcDstForOpaqueOnly(ref srcTarget, ref dstTarget, context, cameraTarget, opaqueOnlyEffects);
-                }
+				if (opaqueOnlyEffects > 0)
+				{
+					var cmd = m_LegacyCmdBufferOpaque;
+					context.command = cmd;
+					context.source = cameraTarget;
+					context.destination = cameraTarget;
+					int srcTarget = -1;
+					int dstTarget = -1;
+
+					UpdateSrcDstForOpaqueOnly(ref srcTarget, ref dstTarget, context, cameraTarget, opaqueOnlyEffects + 1); // + 1 for blit
+
+					if (RequiresInitialBlit(m_Camera, context) || opaqueOnlyEffects == 1)
+					{
+						cmd.BuiltinBlit(context.source, context.destination, RuntimeUtilities.copyStdMaterial, stopNaNPropagation ? 1 : 0);
+						UpdateSrcDstForOpaqueOnly(ref srcTarget, ref dstTarget, context, cameraTarget, opaqueOnlyEffects);
+					}
  
-                if (isScreenSpaceReflectionsActive)
-                {
-                    ssrRenderer.Render(context);
-                    opaqueOnlyEffects--;
-                    UpdateSrcDstForOpaqueOnly(ref srcTarget, ref dstTarget, context, cameraTarget, opaqueOnlyEffects);
-                }
+					if (isScreenSpaceReflectionsActive)
+					{
+						ssrRenderer.Render(context);
+						opaqueOnlyEffects--;
+						UpdateSrcDstForOpaqueOnly(ref srcTarget, ref dstTarget, context, cameraTarget, opaqueOnlyEffects);
+					}
 
-                if (isFogActive)
-                {
-                    fog.Render(context);
-                    opaqueOnlyEffects--;
-                    UpdateSrcDstForOpaqueOnly(ref srcTarget, ref dstTarget, context, cameraTarget, opaqueOnlyEffects);
-                }
+					if (isFogActive)
+					{
+						fog.Render(context);
+						opaqueOnlyEffects--;
+						UpdateSrcDstForOpaqueOnly(ref srcTarget, ref dstTarget, context, cameraTarget, opaqueOnlyEffects);
+					}
 
-                if (hasCustomOpaqueOnlyEffects)
-                    RenderOpaqueOnly(context);
+					if (hasCustomOpaqueOnlyEffects)
+						RenderOpaqueOnly(context);
 
-                cmd.ReleaseTemporaryRT(srcTarget);
-            }
+					cmd.ReleaseTemporaryRT(srcTarget);
+				}
             
-            // Post-transparency stack
-            int tempRt = -1;
-            bool forceNanKillPass = (!m_NaNKilled && stopNaNPropagation && RuntimeUtilities.isFloatingPointFormat(sourceFormat));
-            if (RequiresInitialBlit(m_Camera, context) || forceNanKillPass)
-            {
-                tempRt = m_TargetPool.Get();
-                context.GetScreenSpaceTemporaryRT(m_LegacyCmdBuffer, tempRt, 0, sourceFormat, RenderTextureReadWrite.sRGB);
-                m_LegacyCmdBuffer.BuiltinBlit(cameraTarget, tempRt, RuntimeUtilities.copyStdMaterial, stopNaNPropagation ? 1 : 0);
-                if (!m_NaNKilled)
-                    m_NaNKilled = stopNaNPropagation;
+				// Post-transparency stack
+				int tempRt = -1;
+				bool forceNanKillPass = (!m_NaNKilled && stopNaNPropagation && RuntimeUtilities.isFloatingPointFormat(sourceFormat));
+				if (RequiresInitialBlit(m_Camera, context) || forceNanKillPass)
+				{
+					tempRt = m_TargetPool.Get();
+					context.GetScreenSpaceTemporaryRT(m_LegacyCmdBuffer, tempRt, 0, sourceFormat, RenderTextureReadWrite.sRGB);
+					m_LegacyCmdBuffer.BuiltinBlit(cameraTarget, tempRt, RuntimeUtilities.copyStdMaterial, stopNaNPropagation ? 1 : 0);
+					if (!m_NaNKilled)
+						m_NaNKilled = stopNaNPropagation;
 
-                context.source = tempRt;
-            }
-            else
-            {
-                context.source = cameraTarget;
-            }
+					context.source = tempRt;
+				}
+				else
+				{
+					context.source = cameraTarget;
+				}
 
-            context.destination = cameraTarget;
+				context.destination = cameraTarget;
 
-#if UNITY_2019_1_OR_NEWER
-            if (finalBlitToCameraTarget && !RuntimeUtilities.scriptableRenderPipelineActive)
-            {
-                if (m_Camera.targetTexture)
-                {
-                    context.destination = m_Camera.targetTexture.colorBuffer;
-                }
-                else
-                {
-                    context.flip = true;
-                    context.destination = Display.main.colorBuffer;
-                }
-            } 
-#endif
+	#if UNITY_2019_1_OR_NEWER
+				if (finalBlitToCameraTarget && !RuntimeUtilities.scriptableRenderPipelineActive)
+				{
+					if (m_Camera.targetTexture)
+					{
+						context.destination = m_Camera.targetTexture.colorBuffer;
+					}
+					else
+					{
+						context.flip = true;
+						context.destination = Display.main.colorBuffer;
+					}
+				} 
+	#endif
 
-            context.command = m_LegacyCmdBuffer;
+				context.command = m_LegacyCmdBuffer;
 
-            Render(context);
+				Render(context);
 
-            if (tempRt > -1)
-                m_LegacyCmdBuffer.ReleaseTemporaryRT(tempRt);
-        }
+				if (tempRt > -1)
+					m_LegacyCmdBuffer.ReleaseTemporaryRT(tempRt);
+			}
 
-        void OnPostRender()
+			//invoke all effect renderers updates, pass the context
+			UpdateEffect<Grain>(context);
+			UpdateEffect<Vignette>(context);
+		}
+
+		void OnPostRender()
         {
             // Unused in scriptable render pipelines
             if (RuntimeUtilities.scriptableRenderPipelineActive)
@@ -1313,7 +1327,23 @@ namespace UnityEngine.Rendering.PostProcessing
             return tempTarget;
         }
 
-        bool ShouldGenerateLogHistogram(PostProcessRenderContext context)
+		void UpdateEffect<T>(PostProcessRenderContext context, bool useTempTarget = false)
+	where T : PostProcessEffectSettings
+		{
+			var effect = GetBundle<T>();
+
+			if (!effect.settings.IsEnabledAndSupported(context))
+				return;
+
+			if (m_IsRenderingInSceneView && !effect.attribute.allowInSceneView)
+				return;
+
+			IUpdatableRenderer renderer = effect.renderer as IUpdatableRenderer;
+			if (renderer != null)
+				renderer.UpdateRender(context);
+		}
+
+		bool ShouldGenerateLogHistogram(PostProcessRenderContext context)
         {
             bool autoExpo = GetBundle<AutoExposure>().settings.IsEnabledAndSupported(context);
             bool lightMeter = debugLayer.lightMeter.IsRequestedAndSupported(context);

@@ -97,7 +97,7 @@ namespace UnityEngine.Rendering.PostProcessing
 #if UNITY_2017_1_OR_NEWER
     [UnityEngine.Scripting.Preserve]
 #endif
-    /*internal*/public sealed class VignetteRenderer : PostProcessEffectRenderer<Vignette>
+    /*internal*/public sealed class VignetteRenderer : PostProcessEffectRenderer<Vignette>, IUpdatableRenderer
     {
         public override void Render(PostProcessRenderContext context)
         {
@@ -123,7 +123,7 @@ namespace UnityEngine.Rendering.PostProcessing
 		public static float readoutVignetteIntensity;
 
 		//Readout special thomas
-		public void UpdateVignette(PostProcessRenderContext context) {
+		public void UpdateRender(PostProcessRenderContext context) {
 			float roundness = (1f - settings.roundness.value) * 6f + settings.roundness.value;
 			Shader.SetGlobalVector(ShaderIDs.Vignette_Settings, new Vector4(readoutVignetteIntensity * 3f, settings.smoothness.value * 5f, roundness, settings.rounded.value ? 1f : 0f));
 		}
