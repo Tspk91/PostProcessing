@@ -217,7 +217,10 @@ namespace UnityEngine.Rendering.PostProcessing
                 return;
 
             InitLegacy();
-        }
+
+			//for settings updates
+			activeInstances.Add(this);
+		}
 
         void InitLegacy()
         {
@@ -376,7 +379,10 @@ namespace UnityEngine.Rendering.PostProcessing
             TextureLerper.instance.Clear();
 
             haveBundlesBeenInited = false;
-        }
+
+			//for settings updates
+			activeInstances.Remove(this);
+		}
 
         // Called everytime the user resets the component from the inspector and more importantly
         // the first time it's added to a GameObject. As we don't have added/removed event for
@@ -484,6 +490,9 @@ namespace UnityEngine.Rendering.PostProcessing
         void BuildCommandBuffers()
         {
 			var context = m_CurrentContext;
+
+			if (!Application.isPlaying && rebuildCmdBuffers == 0) //if not playing, update settings always
+				SetDirty();
 
 			if (rebuildCmdBuffers > 0)
 			{
@@ -833,6 +842,20 @@ namespace UnityEngine.Rendering.PostProcessing
             m_CurrentContext = context;
         }
 
+		private void OnValidate()
+		{
+			if (!Application.isPlaying)
+				return;
+			SetDirty();
+		}
+
+		public static List<PostProcessLayer> activeInstances = new List<PostProcessLayer>();
+		public void SetDirty()
+		{
+			if (rebuildCmdBuffers < 1)
+				rebuildCmdBuffers = 1;
+		}
+
         /// <summary>
         /// Updates the state of the volume system. This should be called before any other
         /// post-processing method when running in a scriptable render pipeline. You don't need to
@@ -844,9 +867,9 @@ namespace UnityEngine.Rendering.PostProcessing
         {
             if (m_SettingsUpdateNeeded)
             {
-                cmd.BeginSample("VolumeBlending");
+                //cmd.BeginSample("VolumeBlending");
                 PostProcessManager.instance.UpdateSettings(this, cam);
-                cmd.EndSample("VolumeBlending");
+                //cmd.EndSample("VolumeBlending");
                 m_TargetPool.Reset();
 
                 // TODO: fix me once VR support is in SRP

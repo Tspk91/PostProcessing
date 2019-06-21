@@ -156,7 +156,14 @@ namespace UnityEditor.Rendering.PostProcessing
             }
 
             serializedObject.ApplyModifiedProperties();
-        }
+
+			if (!Application.isPlaying)
+				return;
+			foreach (var pp in PostProcessLayer.activeInstances)
+			{
+				pp.SetDirty();
+			}
+		}
 
         public PostProcessProfile profileRef
         {

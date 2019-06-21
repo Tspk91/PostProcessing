@@ -204,8 +204,8 @@ namespace UnityEngine.Rendering.PostProcessing
             }
         }
 
-        // TODO: Look into a better volume previsualization system
-        void OnDrawGizmos()
+		// TODO: Look into a better volume previsualization system
+		void OnDrawGizmos()
         {
             var colliders = m_TempColliders;
             GetComponents(colliders);
