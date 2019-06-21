@@ -47,6 +47,8 @@ float3 LogGrade(float3 colorLog)
     return colorLog;
 }
 
+float _ReadoutSaturation;
+
 float3 LinearGrade(float3 colorLinear)
 {
     colorLinear = WhiteBalance(colorLinear, _ColorBalance.rgb);
@@ -76,7 +78,7 @@ float3 LinearGrade(float3 colorLinear)
     hsv.x = RotateHue(hue, 0.0, 1.0);
 
     colorLinear = HsvToRgb(hsv);
-    colorLinear = Saturation(colorLinear, _HueSatCon.y * satMult);
+    colorLinear = Saturation(colorLinear, _HueSatCon.y * satMult * _ReadoutSaturation);
 
     return colorLinear;
 }

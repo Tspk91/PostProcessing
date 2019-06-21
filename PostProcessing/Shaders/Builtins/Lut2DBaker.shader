@@ -34,6 +34,8 @@ Shader "Hidden/PostProcessing/Lut2DBaker"
         float4 _ShoSegmentA;
         float4 _ShoSegmentB;
 
+		float _ReadoutSaturation;
+
         float3 ApplyCommonGradingSteps(float3 colorLinear)
         {
             colorLinear = WhiteBalance(colorLinear, _ColorBalance);
@@ -63,7 +65,7 @@ Shader "Hidden/PostProcessing/Lut2DBaker"
             hsv.x = RotateHue(hue, 0.0, 1.0);
 
             colorLinear = HsvToRgb(hsv);
-            colorLinear = Saturation(colorLinear, _HueSatCon.y * satMult);
+            colorLinear = Saturation(colorLinear, _HueSatCon.y * satMult * _ReadoutSaturation);
 
             return colorLinear;
         }

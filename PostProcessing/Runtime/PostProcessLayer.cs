@@ -491,7 +491,7 @@ namespace UnityEngine.Rendering.PostProcessing
         {
 			var context = m_CurrentContext;
 
-			if (!Application.isPlaying && rebuildCmdBuffers == 0) //if not playing, update settings always
+			if (!Application.isPlaying) //if not playing, update settings always
 				SetDirty();
 
 			if (rebuildCmdBuffers > 0)
