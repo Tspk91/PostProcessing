@@ -7,7 +7,7 @@ namespace UnityEngine.Rendering.PostProcessing
     [UnityEngine.Scripting.Preserve]
 #endif
     [Serializable]
-    public sealed class Dithering
+    internal sealed class Dithering
     {
         int m_NoiseTextureIndex = 0;
 
