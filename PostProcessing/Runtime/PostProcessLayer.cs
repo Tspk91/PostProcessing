@@ -76,12 +76,16 @@ namespace UnityEngine.Rendering.PostProcessing
         /// </summary>
         public bool stopNaNPropagation = true;
 
-        /// <summary>
-        /// If <c>true</c>, it will render straight to the backbuffer and save the final blit done
-        /// by the engine. This has less overhead and will improve performance on lower-end platforms
-        /// (like mobiles) but breaks compatibility with legacy image effect that use OnRenderImage.
-        /// </summary>
-        public bool finalBlitToCameraTarget = false;
+		public bool standaloneAmbientOcclusion = false;
+		public bool standaloneMotionBlur = false;
+		public CommandBuffer standaloneMotionBlurCmd;
+
+		/// <summary>
+		/// If <c>true</c>, it will render straight to the backbuffer and save the final blit done
+		/// by the engine. This has less overhead and will improve performance on lower-end platforms
+		/// (like mobiles) but breaks compatibility with legacy image effect that use OnRenderImage.
+		/// </summary>
+		public bool finalBlitToCameraTarget = false;
 
         /// <summary>
         /// The anti-aliasing method to use for this camera. By default it's set to <c>None</c>.
@@ -228,6 +232,9 @@ namespace UnityEngine.Rendering.PostProcessing
             m_LegacyCmdBufferBeforeLighting = new CommandBuffer { name = "Deferred Ambient Occlusion" };
             m_LegacyCmdBufferOpaque = new CommandBuffer { name = "Opaque Only Post-processing" };
             m_LegacyCmdBuffer = new CommandBuffer { name = "Post-processing" };
+
+			if (standaloneMotionBlur)
+				standaloneMotionBlurCmd = new CommandBuffer { name = "Standalone Motion Blur" };
 
 			m_Camera = GetComponent<Camera>();
 
@@ -513,6 +520,9 @@ namespace UnityEngine.Rendering.PostProcessing
 				m_LegacyCmdBufferOpaque.Clear();
 				m_LegacyCmdBuffer.Clear();
 
+				if (standaloneMotionBlur)
+					standaloneMotionBlurCmd.Clear();
+
 				SetupContext(context);
 
 				context.command = m_LegacyCmdBufferOpaque;
@@ -603,7 +613,7 @@ namespace UnityEngine.Rendering.PostProcessing
 				// Post-transparency stack
 				int tempRt = -1;
 				bool forceNanKillPass = (!m_NaNKilled && stopNaNPropagation && RuntimeUtilities.isFloatingPointFormat(sourceFormat));
-				if (RequiresInitialBlit(m_Camera, context) || forceNanKillPass)
+				if (!standaloneAmbientOcclusion && (RequiresInitialBlit(m_Camera, context) || forceNanKillPass))
 				{
 					tempRt = m_TargetPool.Get();
 					context.GetScreenSpaceTemporaryRT(m_LegacyCmdBuffer, tempRt, 0, sourceFormat, RenderTextureReadWrite.sRGB);
@@ -1020,7 +1030,10 @@ namespace UnityEngine.Rendering.PostProcessing
                     lastTarget = RenderInjectionPoint(PostProcessEvent.BeforeStack, context, "BeforeStack", lastTarget);
 
                 // Builtin stack
-                lastTarget = RenderBuiltins(context, !needsFinalPass, lastTarget, eye);
+				if(!standaloneAmbientOcclusion && !standaloneMotionBlur)
+					lastTarget = RenderBuiltins(context, !needsFinalPass, lastTarget, eye);
+				if (standaloneMotionBlur)
+					RenderStandaloneMotionBlur();
 
                 // After the builtin stack but before the final pass (before FXAA & Dithering)
                 if (hasAfterStackEffects)
@@ -1141,6 +1154,36 @@ namespace UnityEngine.Rendering.PostProcessing
         {
             properties.SetVector(ShaderIDs.UVTransform, SystemInfo.graphicsUVStartsAtTop ? new Vector4(1.0f, -1.0f, 0.0f, 1.0f) : new Vector4(1.0f, 1.0f, 0.0f, 0.0f));
         }
+
+		void RenderStandaloneMotionBlur()
+		{
+			var effect = GetBundle<MotionBlur>();
+			if (!effect.settings.IsEnabledAndSupported(null))
+				return;
+
+			PostProcessRenderContext context = new PostProcessRenderContext();
+
+			var sourceFormat = m_Camera.allowHDR ? RuntimeUtilities.defaultHDRRenderTextureFormat : RenderTextureFormat.Default;
+
+			context.camera = m_Camera;
+			context.sourceFormat = sourceFormat;
+
+			SetupContext(context);
+
+			context.command = standaloneMotionBlurCmd;
+			var cmd = context.command;
+
+			context.source = m_Camera.targetTexture;
+			int rtId = Shader.PropertyToID("StandaloneMotionBlurRT");
+			context.command.GetTemporaryRT(rtId, m_Camera.targetTexture.descriptor);
+			context.destination = rtId;
+
+			effect.renderer.Render(context);
+
+			context.command.Blit(context.destination, m_Camera.targetTexture);
+
+			context.command.ReleaseTemporaryRT(rtId);
+		}
 
         int RenderBuiltins(PostProcessRenderContext context, bool isFinalPass, int releaseTargetAfterUse = -1, int eye = -1)
         {

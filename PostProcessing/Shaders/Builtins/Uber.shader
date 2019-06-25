@@ -74,8 +74,6 @@ Shader "Hidden/PostProcessing/Uber"
         // Misc
         half _LumaInAlpha;
 
-		float _ReadoutSharpness;
-
         half4 FragUber(VaryingsDefault i) : SV_Target
         {
             float2 uv = i.texcoord;
@@ -144,23 +142,6 @@ Shader "Hidden/PostProcessing/Uber"
                 color = SRGBToLinear(color);
             }
             #endif
-
-			//CUSTOM SHARPENING CODE-------------------
-			const float2 k = _MainTex_TexelSize.xy;
-
-            float4 topLeft = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, UnityStereoClamp(uvStereoDistorted - k * 0.5));
-            float4 bottomRight = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, UnityStereoClamp(uvStereoDistorted + k * 0.5));
-
-			//magic clampy clamp
-			topLeft = clamp(topLeft, 0.0, 1.0);
-			bottomRight = clamp(bottomRight, 0.0, 1.0);
-
-            float4 corners = 4.0 * (topLeft + bottomRight) - 2.0 * color;
-
-            // Sharpen output
-            color += (color - (corners * 0.166667)) * 2.718282 * _ReadoutSharpness;
-            color = clamp(color, 0.0, HALF_MAX_MINUS1);
-			//-----------------------------------------
 
             color.rgb *= autoExposure;
 
