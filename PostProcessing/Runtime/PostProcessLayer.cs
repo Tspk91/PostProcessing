@@ -428,11 +428,12 @@ namespace UnityEngine.Rendering.PostProcessing
             // when ResetProjectionMatrix() is called and will break transparent rendering if TAA
             // is switched off and the FOV or any other camera property changes.
 
-#if UNITY_2018_2_OR_NEWER
-            if (!m_Camera.usePhysicalProperties)
-#endif
-                m_Camera.ResetProjectionMatrix();
-            m_Camera.nonJitteredProjectionMatrix = m_Camera.projectionMatrix;
+			//DONT DO THIS WE ALREADY TOUCH PROJECTION MATRIX IN CTAA!
+//#if UNITY_2018_2_OR_NEWER
+//            if (!m_Camera.usePhysicalProperties)
+//#endif
+//            m_Camera.ResetProjectionMatrix();
+//            m_Camera.nonJitteredProjectionMatrix = m_Camera.projectionMatrix;
 
 #if ENABLE_VR
             if (m_Camera.stereoEnabled)
@@ -521,7 +522,7 @@ namespace UnityEngine.Rendering.PostProcessing
 				m_LegacyCmdBuffer.Clear();
 
 				if (standaloneMotionBlur)
-					standaloneMotionBlurCmd.Clear();
+					standaloneMotionBlurCmd?.Clear();
 
 				SetupContext(context);
 
@@ -1175,7 +1176,14 @@ namespace UnityEngine.Rendering.PostProcessing
 
 			context.source = m_Camera.targetTexture;
 			int rtId = Shader.PropertyToID("StandaloneMotionBlurRT");
-			context.command.GetTemporaryRT(rtId, m_Camera.targetTexture.descriptor);
+
+			RenderTextureDescriptor rtDescriptor;
+			if (m_Camera.targetTexture != null)
+				rtDescriptor = m_Camera.targetTexture.descriptor;
+			else
+				rtDescriptor = new RenderTextureDescriptor(Screen.width, Screen.height, RenderTextureFormat.DefaultHDR, 32);
+
+			context.command.GetTemporaryRT(rtId, rtDescriptor);
 			context.destination = rtId;
 
 			effect.renderer.Render(context);
