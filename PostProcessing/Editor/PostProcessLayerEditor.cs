@@ -15,6 +15,7 @@ namespace UnityEditor.Rendering.PostProcessing
     sealed class PostProcessLayerEditor : BaseEditor<PostProcessLayer>
     {
         SerializedProperty m_StopNaNPropagation;
+		SerializedProperty m_UberAfterOpaque;
 		SerializedProperty m_StandaloneAmbientOcclusion;
 		SerializedProperty m_StandaloneMotionBlur;
 #pragma warning disable 414
@@ -60,6 +61,7 @@ namespace UnityEditor.Rendering.PostProcessing
         {
             m_StopNaNPropagation = FindProperty(x => x.stopNaNPropagation);
 
+			m_UberAfterOpaque = FindProperty(x => x.uberAfterOpaque);
 			m_StandaloneAmbientOcclusion = FindProperty(x => x.standaloneAmbientOcclusion);
 			m_StandaloneMotionBlur = FindProperty(x => x.standaloneMotionBlur);
 
@@ -105,6 +107,7 @@ namespace UnityEditor.Rendering.PostProcessing
 
 			EditorGUILayout.PropertyField(m_StopNaNPropagation, EditorUtilities.GetContent("Stop NaN Propagation|Automatically replaces NaN/Inf in shaders by a black pixel to avoid breaking some effects. This will slightly affect performances and should only be used if you experience NaN issues that you can't fix. Has no effect on GLES2 platforms."));
 
+			EditorGUILayout.PropertyField(m_UberAfterOpaque);
 			EditorGUILayout.PropertyField(m_StandaloneAmbientOcclusion);
 			EditorGUILayout.PropertyField(m_StandaloneMotionBlur);
 

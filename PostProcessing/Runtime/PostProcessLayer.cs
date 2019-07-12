@@ -76,6 +76,7 @@ namespace UnityEngine.Rendering.PostProcessing
         /// </summary>
         public bool stopNaNPropagation = true;
 
+		public bool uberAfterOpaque = false;
 		public bool standaloneAmbientOcclusion = false;
 		public bool standaloneMotionBlur = false;
 		public CommandBuffer standaloneMotionBlurCmd;
@@ -617,8 +618,8 @@ namespace UnityEngine.Rendering.PostProcessing
 				if (!standaloneAmbientOcclusion && (RequiresInitialBlit(m_Camera, context) || forceNanKillPass))
 				{
 					tempRt = m_TargetPool.Get();
-					context.GetScreenSpaceTemporaryRT(m_LegacyCmdBuffer, tempRt, 0, sourceFormat, RenderTextureReadWrite.sRGB);
-					m_LegacyCmdBuffer.BuiltinBlit(cameraTarget, tempRt, RuntimeUtilities.copyStdMaterial, stopNaNPropagation ? 1 : 0);
+					context.GetScreenSpaceTemporaryRT((uberAfterOpaque ? m_LegacyCmdBufferOpaque : m_LegacyCmdBuffer), tempRt, 0, sourceFormat, RenderTextureReadWrite.sRGB);
+					(uberAfterOpaque ? m_LegacyCmdBufferOpaque : m_LegacyCmdBuffer).BuiltinBlit(cameraTarget, tempRt, RuntimeUtilities.copyStdMaterial, stopNaNPropagation ? 1 : 0);
 					if (!m_NaNKilled)
 						m_NaNKilled = stopNaNPropagation;
 
@@ -646,12 +647,12 @@ namespace UnityEngine.Rendering.PostProcessing
 				} 
 	#endif
 
-				context.command = m_LegacyCmdBuffer;
+				context.command = (uberAfterOpaque ? m_LegacyCmdBufferOpaque : m_LegacyCmdBuffer);				
 
 				Render(context);
 
 				if (tempRt > -1)
-					m_LegacyCmdBuffer.ReleaseTemporaryRT(tempRt);
+					(uberAfterOpaque ? m_LegacyCmdBufferOpaque : m_LegacyCmdBuffer).ReleaseTemporaryRT(tempRt);
 			}
 
 			//invoke all effect renderers updates, pass the context
