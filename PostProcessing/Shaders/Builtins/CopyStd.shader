@@ -74,6 +74,24 @@ Shader "Hidden/PostProcessing/CopyStd"
             return color;
         }
 
+
+
+		//-------------------CUSTOM TSPK MAGIC
+		Varyings VertScreenSpace(Attributes v)
+        {
+            Varyings o;
+			o.vertex = float4(v.vertex.xy, 0.0, 1.0);
+			o.texcoord = (v.vertex.xy + 1.0) * 0.5;
+
+            #if UNITY_UV_STARTS_AT_TOP
+            o.texcoord = o.texcoord * float2(1.0, -1.0) + float2(0.0, 1.0);
+            #endif
+
+            o.texcoord = o.texcoord * _MainTex_ST.xy + _MainTex_ST.zw; // We need this for VR
+
+            return o;
+        }
+
     ENDCG
 
     SubShader
@@ -98,6 +116,17 @@ Shader "Hidden/PostProcessing/CopyStd"
 
                 #pragma vertex Vert
                 #pragma fragment FragKillNaN
+
+            ENDCG
+        }
+
+		// 2 - Magic Tspk
+        Pass
+        {
+            CGPROGRAM
+
+                #pragma vertex VertScreenSpace
+                #pragma fragment Frag
 
             ENDCG
         }

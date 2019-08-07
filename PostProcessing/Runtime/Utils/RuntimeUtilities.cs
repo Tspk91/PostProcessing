@@ -504,7 +504,7 @@ namespace UnityEngine.Rendering.PostProcessing
             if (clear)
                 cmd.ClearRenderTarget(true, true, Color.clear);
 
-            cmd.DrawMesh(fullscreenTriangle, Matrix4x4.identity, propertySheet.material, 0, pass, propertySheet.properties);
+            cmd.DrawMesh(CurrentActiveMesh, Matrix4x4.identity, propertySheet.material, 0, pass, propertySheet.properties);
         }
 
         /// <summary>
@@ -593,7 +593,7 @@ namespace UnityEngine.Rendering.PostProcessing
             if (clear)
                 cmd.ClearRenderTarget(true, true, Color.clear);
 
-            cmd.DrawMesh(fullscreenTriangle, Matrix4x4.identity, propertySheet.material, 0, pass, propertySheet.properties);
+            cmd.DrawMesh(CurrentActiveMesh, Matrix4x4.identity, propertySheet.material, 0, pass, propertySheet.properties);
         }
 
         /// <summary>
@@ -616,7 +616,7 @@ namespace UnityEngine.Rendering.PostProcessing
             if (clear)
                 cmd.ClearRenderTarget(true, true, Color.clear);
 
-            cmd.DrawMesh(fullscreenTriangle, Matrix4x4.identity, propertySheet.material, 0, pass, propertySheet.properties);
+            cmd.DrawMesh(CurrentActiveMesh, Matrix4x4.identity, propertySheet.material, 0, pass, propertySheet.properties);
         }
 
         /// <summary>
@@ -648,7 +648,7 @@ namespace UnityEngine.Rendering.PostProcessing
             if (viewport != null)
                 cmd.SetViewport(viewport.Value);
 
-            cmd.DrawMesh(fullscreenTriangle, Matrix4x4.identity, propertySheet.material, 0, pass, propertySheet.properties);
+            cmd.DrawMesh(CurrentActiveMesh, Matrix4x4.identity, propertySheet.material, 0, pass, propertySheet.properties);
         }
 
         /// <summary>
@@ -676,23 +676,35 @@ namespace UnityEngine.Rendering.PostProcessing
             cmd.DrawMesh(CurrentActiveMesh, Matrix4x4.identity, propertySheet.material, 0, pass, propertySheet.properties);
         }
 
-        public static void BlitFullscreenTriangle(Texture source, RenderTexture destination, Material material, int pass)
+		public static void BlitFullscreenTriangle(this CommandBuffer cmd, RenderTargetIdentifier source, RenderTargetIdentifier destination, Material material, int pass = 0)
+		{
+			cmd.SetGlobalTexture(ShaderIDs.MainTex, source);
+			cmd.SetRenderTarget(destination);
+
+			cmd.DrawMesh(CurrentActiveMesh, Matrix4x4.identity, material, 0, pass);
+		}
+
+		static CommandBuffer customBlitCmd = new CommandBuffer() { name = "Custom blit (Runtime Utilities)" };
+
+		public static void BlitFullscreenTriangle(Texture source, RenderTexture destination, Material material, int pass)
         {
-            var oldRt = RenderTexture.active;
+			customBlitCmd.Clear();
+			material.SetTexture(ShaderIDs.MainTex, source);
+			Graphics.SetRenderTarget(destination);
+			customBlitCmd.DrawMesh(CurrentActiveMesh, Matrix4x4.identity, material, 0, pass);
+			Graphics.ExecuteCommandBuffer(customBlitCmd);
+		}
 
-            material.SetPass(pass);
-            if (source != null)
-                material.SetTexture(ShaderIDs.MainTex, source);
+		public static void BlitFullscreenTriangle(Texture source, RenderTexture destination)
+		{
+			customBlitCmd.Clear();
+			copyStdMaterial.SetTexture(ShaderIDs.MainTex, source);
+			Graphics.SetRenderTarget(destination);
+			customBlitCmd.DrawMesh(CurrentActiveMesh, Matrix4x4.identity, copyStdMaterial, 0, 2);
+			Graphics.ExecuteCommandBuffer(customBlitCmd);
+		}
 
-            if (destination != null)
-                destination.DiscardContents(true, false);
-
-            Graphics.SetRenderTarget(destination);
-            Graphics.DrawMeshNow(CurrentActiveMesh, Matrix4x4.identity);
-            RenderTexture.active = oldRt;
-        }
-
-        public static void BuiltinBlit(this CommandBuffer cmd, Rendering.RenderTargetIdentifier source, Rendering.RenderTargetIdentifier destination)
+		public static void BuiltinBlit(this CommandBuffer cmd, Rendering.RenderTargetIdentifier source, Rendering.RenderTargetIdentifier destination)
         {
             #if UNITY_2018_2_OR_NEWER
             cmd.SetRenderTarget(destination, RenderBufferLoadAction.DontCare, RenderBufferStoreAction.Store);
