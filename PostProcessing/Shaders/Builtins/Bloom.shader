@@ -6,9 +6,14 @@ Shader "Hidden/PostProcessing/Bloom"
         #include "../Colors.hlsl"
         #include "../Sampling.hlsl"
 
+		#pragma multi_compile __ HUD_BLOOM
+
         TEXTURE2D_SAMPLER2D(_MainTex, sampler_MainTex);
         TEXTURE2D_SAMPLER2D(_BloomTex, sampler_BloomTex);
         TEXTURE2D_SAMPLER2D(_AutoExposureTex, sampler_AutoExposureTex);
+
+		        TEXTURE2D_SAMPLER2D(_HUD_RT, sampler_HUD_RT);
+				float _HudBloomIntensity;
 
         float4 _MainTex_TexelSize;
         float  _SampleScale;
@@ -30,8 +35,14 @@ Shader "Hidden/PostProcessing/Bloom"
 
         half4 FragPrefilter13(VaryingsDefault i) : SV_Target
         {
-            half4 color = DownsampleBox13Tap(TEXTURE2D_PARAM(_MainTex, sampler_MainTex), i.texcoord, UnityStereoAdjustedTexelSize(_MainTex_TexelSize).xy);
-            return Prefilter(SafeHDR(color), i.texcoord);
+			half4 hudColor = 0;
+		#if HUD_BLOOM
+				hudColor = DownsampleBox13Tap(TEXTURE2D_PARAM(_HUD_RT, sampler_HUD_RT), i.texcoord, UnityStereoAdjustedTexelSize(_MainTex_TexelSize).xy);
+				float hudColorLum = dot(hudColor, 0.33);
+				hudColor = hudColor / lerp(1, hudColorLum, 1 - step(hudColor.a, 0.02)) * _HudBloomIntensity;
+		#endif
+			half4 color = DownsampleBox13Tap(TEXTURE2D_PARAM(_MainTex, sampler_MainTex), i.texcoord, UnityStereoAdjustedTexelSize(_MainTex_TexelSize).xy);
+            return Prefilter(SafeHDR(color + hudColor), i.texcoord);
         }
 
         half4 FragPrefilter4(VaryingsDefault i) : SV_Target

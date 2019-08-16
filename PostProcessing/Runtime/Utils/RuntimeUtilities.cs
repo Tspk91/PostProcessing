@@ -396,8 +396,11 @@ namespace UnityEngine.Rendering.PostProcessing
             }
         }
 
-        internal static void UpdateResources(PostProcessResources resources)
+        public static void UpdateResources(PostProcessResources resources)
         {
+			if (s_Resources != null)
+				return;
+
             Destroy(s_CopyMaterial);
             Destroy(s_CopyStdMaterial);
             Destroy(s_CopyFromTexArrayMaterial);
