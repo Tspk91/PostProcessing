@@ -14,6 +14,9 @@ Shader "Hidden/PostProcessing/CopyStd"
 
     CGINCLUDE
 
+		#include "UnityCG.cginc"
+		#pragma multi_compile __ STEREO_RENDER
+
         struct Attributes
         {
             float4 vertex : POSITION;
@@ -87,7 +90,10 @@ Shader "Hidden/PostProcessing/CopyStd"
             o.texcoord = o.texcoord * float2(1.0, -1.0) + float2(0.0, 1.0);
             #endif
 
-            o.texcoord = o.texcoord * _MainTex_ST.xy + _MainTex_ST.zw; // We need this for VR
+			#if UNITY_SINGLE_PASS_STEREO
+				float4 scaleOffset = unity_StereoScaleOffset[unity_StereoEyeIndex];
+				o.texcoord = o.texcoord.xy * scaleOffset.xy + scaleOffset.zw;
+			#endif
 
             return o;
         }
