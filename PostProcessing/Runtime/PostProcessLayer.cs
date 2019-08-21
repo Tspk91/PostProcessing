@@ -76,6 +76,7 @@ namespace UnityEngine.Rendering.PostProcessing
         /// </summary>
         public bool stopNaNPropagation = true;
 
+		public bool rebuildEveryFrame = false;
 		public bool uberAfterOpaque = false;
 		public bool standaloneAmbientOcclusion = false;
 		public bool standaloneMotionBlur = false;
@@ -503,7 +504,7 @@ namespace UnityEngine.Rendering.PostProcessing
 			if (!Application.isPlaying) //if not playing, update settings always
 				SetDirty();
 
-			if (rebuildCmdBuffers > 0)
+			if (rebuildCmdBuffers > 0 || rebuildEveryFrame)
 			{
 				rebuildCmdBuffers--;
 
