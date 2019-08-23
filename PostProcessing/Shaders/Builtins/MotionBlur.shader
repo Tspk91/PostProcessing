@@ -203,7 +203,7 @@ Shader "Hidden/PostProcessing/MotionBlur"
 
             // Background velocity
             // This is used for tracking the maximum velocity in the background layer.
-            half l_v_bg = max(l_v_p, 1.0);
+            half l_v_bg = l_v_p;
 
             // Color accumlation
             half4 acc = 0.0;
@@ -231,7 +231,7 @@ Shader "Hidden/PostProcessing/MotionBlur"
                 const half3 vd = SampleVelocity(uv1);
 
                 // Background/Foreground separation
-                const half fg = saturate((vd_p.z - vd.z) * 20.0 * rcp_d_p);
+                const half fg = saturate((vd_p.z - vd.z) * 100.0 * rcp_d_p);
 
                 // Length of the velocity vector
                 const half l_v = lerp(l_v_bg, length(vd.xy), fg);
