@@ -1161,7 +1161,7 @@ namespace UnityEngine.Rendering.PostProcessing
 		void RenderStandaloneMotionBlur()
 		{
 			var effect = GetBundle<MotionBlur>();
-			if (!effect.settings.IsEnabledAndSupported(null))
+			if (!effect.settings.IsEnabledAndSupported(null) || standaloneMotionBlurCmd == null)
 				return;
 
 			PostProcessRenderContext context = new PostProcessRenderContext();
