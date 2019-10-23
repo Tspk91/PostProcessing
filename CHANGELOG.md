@@ -4,7 +4,22 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [2.1.7] - 2019-XX-XX
+## [2.1.9] - 2019-XX-XX
+
+### Fixed
+- Shader compilation error on PS4 with Unity 2019.3.
+
+## [2.1.8] - 2019-10-11
+
+### Added
+- Support for dynamic resolution.
+
+### Fixed
+- Potential fp16 overflow in Depth of Field that could cause NaN on some platforms.
+- Error with Screen-space Reflections when HDR is disabled.
+- Internal "copy" materials were recreated on every frame after the asset bundle-related fix from 2.1.7.
+
+## [2.1.7] - 2019-06-12
 
 ### Added
 - Initial Stadia platform support.
@@ -17,6 +32,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - Warning for mobiles about using post-processing with non-fullscreen cameras.
 - Directly to Camera Target on the PostProcessLayer component is now disabled by default.
+- The framework now uses its own random number generator instead of the default Unity one.
 
 ## [2.1.6] - 2019-04-11
 
