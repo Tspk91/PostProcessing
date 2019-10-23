@@ -120,6 +120,10 @@ namespace UnityEngine.Rendering.PostProcessing
         [SerializeField]
         PostProcessResources m_Resources;
 
+        // Some juggling needed to track down reference to the resource asset when loaded from asset
+        // bundle (guid conflict)
+        PostProcessResources m_OldResources;
+
         // UI states
 #if UNITY_2017_1_OR_NEWER
         [UnityEngine.Scripting.Preserve]
@@ -232,11 +236,17 @@ namespace UnityEngine.Rendering.PostProcessing
             m_Camera.AddCommandBuffer(CameraEvent.BeforeLighting, m_LegacyCmdBufferBeforeLighting);
             m_Camera.AddCommandBuffer(CameraEvent.BeforeImageEffectsOpaque, m_LegacyCmdBufferOpaque);
             m_Camera.AddCommandBuffer(CameraEvent.BeforeImageEffects, m_LegacyCmdBuffer);
-               
+
             // Internal context used if no SRP is set
             m_CurrentContext = new PostProcessRenderContext();
         }
 
+#if UNITY_2019_1_OR_NEWER
+        bool DynamicResolutionAllowsFinalBlitToCameraTarget()
+        { 
+            return (!m_Camera.allowDynamicResolution || (ScalableBufferManager.heightScaleFactor == 1.0 && ScalableBufferManager.widthScaleFactor == 1.0));
+        }
+#endif
 
 #if UNITY_2019_1_OR_NEWER
         // We always use a CommandBuffer to blit to the final render target
@@ -244,7 +254,7 @@ namespace UnityEngine.Rendering.PostProcessing
         [ImageEffectUsesCommandBuffer]
         void OnRenderImage(RenderTexture src, RenderTexture dst)
         {
-            if (finalBlitToCameraTarget)
+            if (finalBlitToCameraTarget && DynamicResolutionAllowsFinalBlitToCameraTarget())
                 RenderTexture.active = dst; // silence warning
             else
                 Graphics.Blit(src, dst);
@@ -397,7 +407,11 @@ namespace UnityEngine.Rendering.PostProcessing
             //   and use LoadAction.DontCare freely, which will ruin the RT if we are using viewport.
             // It should actually check for having tiled architecture but this is not exposed to script,
             // so we are checking for mobile as a good substitute
+#if UNITY_2019_3_OR_NEWER
+            if(SystemInfo.usesLoadStoreActions)
+#else
             if(Application.isMobilePlatform)
+#endif
             {
                 Rect r = m_Camera.rect;
                 if(Mathf.Abs(r.x) > 1e-6f || Mathf.Abs(r.y) > 1e-6f || Mathf.Abs(1.0f - r.width) > 1e-6f || Mathf.Abs(1.0f - r.height) > 1e-6f)
@@ -450,7 +464,7 @@ namespace UnityEngine.Rendering.PostProcessing
                 return true;
             if (RuntimeUtilities.scriptableRenderPipelineActive) // Should never be called from SRP
                 return true;
-              
+
             return false;
 #else
             return true;
@@ -561,7 +575,7 @@ namespace UnityEngine.Rendering.PostProcessing
                     cmd.BuiltinBlit(context.source, context.destination, RuntimeUtilities.copyStdMaterial, stopNaNPropagation ? 1 : 0);
                     UpdateSrcDstForOpaqueOnly(ref srcTarget, ref dstTarget, context, cameraTarget, opaqueOnlyEffects);
                 }
- 
+
                 if (isScreenSpaceReflectionsActive)
                 {
                     ssrRenderer.Render(context);
@@ -581,7 +595,7 @@ namespace UnityEngine.Rendering.PostProcessing
 
                 cmd.ReleaseTemporaryRT(srcTarget);
             }
-            
+
             // Post-transparency stack
             int tempRt = -1;
             bool forceNanKillPass = (!m_NaNKilled && stopNaNPropagation && RuntimeUtilities.isFloatingPointFormat(sourceFormat));
@@ -603,7 +617,7 @@ namespace UnityEngine.Rendering.PostProcessing
             context.destination = cameraTarget;
 
 #if UNITY_2019_1_OR_NEWER
-            if (finalBlitToCameraTarget && !RuntimeUtilities.scriptableRenderPipelineActive)
+            if (finalBlitToCameraTarget && !RuntimeUtilities.scriptableRenderPipelineActive && DynamicResolutionAllowsFinalBlitToCameraTarget())
             {
                 if (m_Camera.targetTexture)
                 {
@@ -614,7 +628,7 @@ namespace UnityEngine.Rendering.PostProcessing
                     context.flip = true;
                     context.destination = Display.main.colorBuffer;
                 }
-            } 
+            }
 #endif
 
             context.command = m_LegacyCmdBuffer;
@@ -635,9 +649,9 @@ namespace UnityEngine.Rendering.PostProcessing
             {
 #if UNITY_2018_2_OR_NEWER
                 // TAA calls SetProjectionMatrix so if the camera projection mode was physical, it gets set to explicit. So we set it back to physical.
-                if (m_CurrentContext.physicalCamera)   
+                if (m_CurrentContext.physicalCamera)
                     m_Camera.usePhysicalProperties = true;
-                else 
+                else
 #endif
                     m_Camera.ResetProjectionMatrix();
 
@@ -794,7 +808,13 @@ namespace UnityEngine.Rendering.PostProcessing
 
         void SetupContext(PostProcessRenderContext context)
         {
-            RuntimeUtilities.UpdateResources(m_Resources);
+            // Juggling required when a scene with post processing is loaded from an asset bundle
+            // See #1148230
+            if (m_OldResources != m_Resources)
+            {
+                RuntimeUtilities.UpdateResources(m_Resources);
+                m_OldResources = m_Resources;
+            }
 
             m_IsRenderingInSceneView = context.camera.cameraType == CameraType.SceneView;
             context.isSceneView = m_IsRenderingInSceneView;
