@@ -92,6 +92,10 @@ namespace UnityEngine.Rendering.PostProcessing
 #if UNITY_2017_2_OR_NEWER
                     m_sourceDescriptor.width = width;
                     m_sourceDescriptor.height = height;
+
+                    m_sourceDescriptor.dimension = TextureDimension.Tex2D;
+                    m_sourceDescriptor.msaaSamples = 1;
+                    m_sourceDescriptor.colorFormat = RenderTextureFormat.DefaultHDR;
 #endif
                     screenWidth = width;
                     screenHeight = height;
