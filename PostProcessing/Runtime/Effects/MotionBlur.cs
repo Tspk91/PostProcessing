@@ -22,7 +22,11 @@ namespace UnityEngine.Rendering.PostProcessing
         [Range(4, 32), Tooltip("The amount of sample points. This affects quality and performance.")]
         public IntParameter sampleCount = new IntParameter { value = 10 };
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Returns <c>true</c> if the effect is currently enabled and supported.
+        /// </summary>
+        /// <param name="context">The current post-processing render context</param>
+        /// <returns><c>true</c> if the effect is currently enabled and supported</returns>
         public override bool IsEnabledAndSupported(PostProcessRenderContext context)
         {
             return enabled.value
@@ -38,9 +42,7 @@ namespace UnityEngine.Rendering.PostProcessing
         }
     }
 
-#if UNITY_2017_1_OR_NEWER
     [UnityEngine.Scripting.Preserve]
-#endif
     internal sealed class MotionBlurRenderer : PostProcessEffectRenderer<MotionBlur>
     {
         enum Pass
@@ -61,7 +63,6 @@ namespace UnityEngine.Rendering.PostProcessing
         private void CreateTemporaryRT(PostProcessRenderContext context, int nameID, int width, int height, RenderTextureFormat RTFormat)
         {
             var cmd = context.command;
-#if UNITY_2017_2_OR_NEWER            
             var rtDesc = context.GetDescriptor(0, RTFormat, RenderTextureReadWrite.Linear);
             rtDesc.width = width;
             rtDesc.height = height;
@@ -71,9 +72,6 @@ namespace UnityEngine.Rendering.PostProcessing
             cmd.GetTemporaryRT(nameID, rtDesc.width, rtDesc.height, rtDesc.depthBufferBits, FilterMode.Point, rtDesc.colorFormat, RenderTextureReadWrite.Linear, rtDesc.msaaSamples, rtDesc.enableRandomWrite, rtDesc.memoryless, context.camera.allowDynamicResolution);
 #else            
             cmd.GetTemporaryRT(nameID, rtDesc.width, rtDesc.height, rtDesc.depthBufferBits, FilterMode.Point, rtDesc.colorFormat, RenderTextureReadWrite.Linear, rtDesc.msaaSamples, rtDesc.enableRandomWrite, rtDesc.memoryless);
-#endif
-#else
-            cmd.GetTemporaryRT(nameID, width, height, 0, FilterMode.Point, RTFormat, RenderTextureReadWrite.Linear);
 #endif
         }
 
