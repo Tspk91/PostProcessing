@@ -45,7 +45,7 @@ namespace UnityEngine.Rendering.PostProcessing
                     if (stereoRenderingMode == StereoRenderingMode.SinglePassInstanced)
                         numberOfEyes = 2;
 
-#if UNITY_2019_1_OR_NEWER
+#if false && UNITY_2019_1_OR_NEWER
                     if (stereoRenderingMode == StereoRenderingMode.SinglePass)
                     {
                         numberOfEyes = 2;
