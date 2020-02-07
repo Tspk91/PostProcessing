@@ -250,9 +250,9 @@ namespace UnityEngine.Rendering.PostProcessing
             m_Camera = null;
             width = 0;
             height = 0;
-            m_sourceDescriptor = new RenderTextureDescriptor(0, 0);
+			m_sourceDescriptor = new RenderTextureDescriptor(0, 0) { colorFormat = RenderTextureFormat.Default, msaaSamples = 1 };
 #if UNITY_2018_2_OR_NEWER
-            physicalCamera = false;
+			physicalCamera = false;
 #endif
             stereoActive = false;
             xrActiveEye = (int)Camera.StereoscopicEye.Left;
@@ -323,8 +323,8 @@ namespace UnityEngine.Rendering.PostProcessing
 
         // TODO: Change w/h name to texture w/h in order to make
         // size usages explicit
-        RenderTextureDescriptor m_sourceDescriptor;
-        internal RenderTextureDescriptor GetDescriptor(int depthBufferBits = 0, RenderTextureFormat colorFormat = RenderTextureFormat.Default, RenderTextureReadWrite readWrite = RenderTextureReadWrite.Default)
+        RenderTextureDescriptor m_sourceDescriptor = new RenderTextureDescriptor(0, 0) { colorFormat = RenderTextureFormat.Default, msaaSamples = 1 };
+		internal RenderTextureDescriptor GetDescriptor(int depthBufferBits = 0, RenderTextureFormat colorFormat = RenderTextureFormat.Default, RenderTextureReadWrite readWrite = RenderTextureReadWrite.Default)
         {
             var modifiedDesc = new RenderTextureDescriptor(m_sourceDescriptor.width, m_sourceDescriptor.height,
                                                                                 m_sourceDescriptor.colorFormat, depthBufferBits);

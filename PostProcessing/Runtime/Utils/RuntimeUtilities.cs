@@ -839,13 +839,7 @@ namespace UnityEngine.Rendering.PostProcessing
         {
             get
             {
-#if ENABLE_VR && UNITY_EDITOR && !UNITY_2020_1_OR_NEWER
-                return UnityEditorInternal.VR.VREditor.GetVREnabledOnTargetGroup(BuildPipeline.GetBuildTargetGroup(EditorUserBuildSettings.activeBuildTarget));
-#elif UNITY_XBOXONE || !ENABLE_VR
-                return false;
-#else
                 return UnityEngine.XR.XRSettings.enabled;
-#endif
             }
         }
 
