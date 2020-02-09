@@ -78,6 +78,10 @@ namespace UnityEngine.Rendering.PostProcessing
 		public bool uberAfterOpaque = false;
 		public bool standaloneAmbientOcclusion = false;
 		public bool standaloneMotionBlur = false;
+
+		[System.NonSerialized]
+		public RenderTargetIdentifier? customSourceTarget;
+		[System.NonSerialized]
 		public CommandBuffer standaloneMotionBlurCmd;
 
 		/// <summary>
@@ -647,24 +651,32 @@ namespace UnityEngine.Rendering.PostProcessing
 
 					cmd.ReleaseTemporaryRT(srcTarget);
 				}
-            
+
 				// Post-transparency stack
 				int tempRt = -1;
-				bool forceNanKillPass = (!m_NaNKilled && stopNaNPropagation && RuntimeUtilities.isFloatingPointFormat(sourceFormat));
-				if (!standaloneAmbientOcclusion && (RequiresInitialBlit(m_Camera, context) || forceNanKillPass))
+				if(customSourceTarget.HasValue)
 				{
-					tempRt = m_TargetPool.Get();
-					context.GetScreenSpaceTemporaryRT((uberAfterOpaque ? m_LegacyCmdBufferOpaque : m_LegacyCmdBuffer), tempRt, 0, sourceFormat, RenderTextureReadWrite.sRGB);
-					(uberAfterOpaque ? m_LegacyCmdBufferOpaque : m_LegacyCmdBuffer).BuiltinBlit(cameraTarget, tempRt, RuntimeUtilities.copyStdMaterial, stopNaNPropagation ? 1 : 0);
-					if (!m_NaNKilled)
-						m_NaNKilled = stopNaNPropagation;
-
-					context.source = tempRt;
+					context.source = customSourceTarget.Value;
 				}
 				else
 				{
-					context.source = cameraTarget;
+					bool forceNanKillPass = (!m_NaNKilled && stopNaNPropagation && RuntimeUtilities.isFloatingPointFormat(sourceFormat));
+					if (!standaloneAmbientOcclusion && (RequiresInitialBlit(m_Camera, context) || forceNanKillPass))
+					{
+						tempRt = m_TargetPool.Get();
+						context.GetScreenSpaceTemporaryRT((uberAfterOpaque ? m_LegacyCmdBufferOpaque : m_LegacyCmdBuffer), tempRt, 0, sourceFormat, RenderTextureReadWrite.sRGB);
+						(uberAfterOpaque ? m_LegacyCmdBufferOpaque : m_LegacyCmdBuffer).BuiltinBlit(cameraTarget, tempRt, RuntimeUtilities.copyStdMaterial, stopNaNPropagation ? 1 : 0);
+						if (!m_NaNKilled)
+							m_NaNKilled = stopNaNPropagation;
+
+						context.source = tempRt;
+					}
+					else
+					{
+						context.source = cameraTarget;
+					}
 				}
+
 
 				context.destination = cameraTarget;
 
