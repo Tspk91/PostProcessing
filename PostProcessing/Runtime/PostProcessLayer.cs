@@ -277,18 +277,18 @@ namespace UnityEngine.Rendering.PostProcessing
         }
 #endif
 
-#if UNITY_2019_1_OR_NEWER
-        // We always use a CommandBuffer to blit to the final render target
-        // OnRenderImage is used only to avoid the automatic blit from the RenderTexture of Camera.forceIntoRenderTexture to the actual target
-        [ImageEffectUsesCommandBuffer]
-        void OnRenderImage(RenderTexture src, RenderTexture dst)
-        {
-            if (finalBlitToCameraTarget && DynamicResolutionAllowsFinalBlitToCameraTarget())
-                RenderTexture.active = dst; // silence warning
-            else
-                Graphics.Blit(src, dst);
-        }
-#endif
+//#if UNITY_2019_1_OR_NEWER
+//        // We always use a CommandBuffer to blit to the final render target
+//        // OnRenderImage is used only to avoid the automatic blit from the RenderTexture of Camera.forceIntoRenderTexture to the actual target
+//        [ImageEffectUsesCommandBuffer]
+//        void OnRenderImage(RenderTexture src, RenderTexture dst)
+//        {
+//            if (finalBlitToCameraTarget && DynamicResolutionAllowsFinalBlitToCameraTarget())
+//                RenderTexture.active = dst; // silence warning
+//            else
+//                Graphics.Blit(src, dst);
+//        }
+//#endif
 
         /// <summary>
         /// Initializes this layer. If you create the layer via scripting you should always call
@@ -668,20 +668,20 @@ namespace UnityEngine.Rendering.PostProcessing
 
 				context.destination = cameraTarget;
 
-	#if UNITY_2019_1_OR_NEWER
-				if (finalBlitToCameraTarget && !RuntimeUtilities.scriptableRenderPipelineActive)
-				{
-					if (m_Camera.targetTexture)
-					{
-						context.destination = m_Camera.targetTexture.colorBuffer;
-					}
-					else
-					{
-						context.flip = true;
-						context.destination = Display.main.colorBuffer;
-					}
-				} 
-	#endif
+	//#if UNITY_2019_1_OR_NEWER
+	//			if (finalBlitToCameraTarget && !RuntimeUtilities.scriptableRenderPipelineActive)
+	//			{
+	//				if (m_Camera.targetTexture)
+	//				{
+	//					context.destination = m_Camera.targetTexture.colorBuffer;
+	//				}
+	//				else
+	//				{
+	//					context.flip = true;
+	//					context.destination = Display.main.colorBuffer;
+	//				}
+	//			} 
+	//#endif
 
 				context.command = (uberAfterOpaque ? m_LegacyCmdBufferOpaque : m_LegacyCmdBuffer);				
 
