@@ -70,7 +70,7 @@ namespace UnityEngine.Rendering.PostProcessing
                     screenWidth = XRSettings.eyeTextureWidth;
                     screenHeight = XRSettings.eyeTextureHeight;
 
-#if UNITY_2019_1_OR_NEWER
+#if false && UNITY_2019_1_OR_NEWER
                     if (stereoRenderingMode == StereoRenderingMode.SinglePass)
                         screenWidth /= 2;
 #endif
