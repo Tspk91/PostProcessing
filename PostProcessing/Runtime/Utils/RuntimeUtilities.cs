@@ -678,10 +678,13 @@ namespace UnityEngine.Rendering.PostProcessing
             cmd.DrawMesh(CurrentActiveMesh, Matrix4x4.identity, propertySheet.material, 0, pass, propertySheet.properties);
         }
 
-		public static void BlitFullscreenTriangle(this CommandBuffer cmd, RenderTargetIdentifier source, RenderTargetIdentifier destination, Material material, int pass = 0)
+		public static void BlitFullscreenTriangle(this CommandBuffer cmd, RenderTargetIdentifier source, RenderTargetIdentifier destination, Material material, int pass = 0, bool clear = false)
 		{
 			cmd.SetGlobalTexture(ShaderIDs.MainTex, source);
 			cmd.SetRenderTarget(destination);
+
+			if (clear)
+				cmd.ClearRenderTarget(true, true, Color.clear);
 
 			cmd.DrawMesh(CurrentActiveMesh, Matrix4x4.identity, material, 0, pass);
 		}
