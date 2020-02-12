@@ -253,18 +253,18 @@ namespace UnityEngine.Rendering.PostProcessing
             }
         }
 
-        static Mesh currentActiveMesh;
-        public static Mesh CurrentActiveMesh
+        static Mesh s_currentMesh;
+        public static Mesh CurrentMesh
         {
             get
             {
-                if (currentActiveMesh == null)
-                    currentActiveMesh = fullscreenTriangle;
-                return currentActiveMesh;
+                if (s_currentMesh == null)
+                    s_currentMesh = fullscreenTriangle;
+                return s_currentMesh;
             }
             set
             {
-                currentActiveMesh = value;
+                s_currentMesh = value;
             }
         }
 
@@ -476,7 +476,7 @@ namespace UnityEngine.Rendering.PostProcessing
             if (clear)
                 cmd.ClearRenderTarget(true, true, Color.clear);
 
-            cmd.DrawMesh(CurrentActiveMesh, Matrix4x4.identity, copyMaterial, 0, 0);
+            cmd.DrawMesh(CurrentMesh, Matrix4x4.identity, copyMaterial, 0, 0);
         }
 
         /// <summary>
@@ -507,7 +507,7 @@ namespace UnityEngine.Rendering.PostProcessing
             if (clear)
                 cmd.ClearRenderTarget(true, true, Color.clear);
 
-            cmd.DrawMesh(CurrentActiveMesh, Matrix4x4.identity, propertySheet.material, 0, pass, propertySheet.properties);
+            cmd.DrawMesh(CurrentMesh, Matrix4x4.identity, propertySheet.material, 0, pass, propertySheet.properties);
         }
 
         /// <summary>
@@ -596,7 +596,7 @@ namespace UnityEngine.Rendering.PostProcessing
             if (clear)
                 cmd.ClearRenderTarget(true, true, Color.clear);
 
-            cmd.DrawMesh(CurrentActiveMesh, Matrix4x4.identity, propertySheet.material, 0, pass, propertySheet.properties);
+            cmd.DrawMesh(CurrentMesh, Matrix4x4.identity, propertySheet.material, 0, pass, propertySheet.properties);
         }
 
         /// <summary>
@@ -618,7 +618,7 @@ namespace UnityEngine.Rendering.PostProcessing
             if (clear)
                 cmd.ClearRenderTarget(true, true, Color.clear);
 
-            cmd.DrawMesh(CurrentActiveMesh, Matrix4x4.identity, propertySheet.material, 0, pass, propertySheet.properties);
+            cmd.DrawMesh(CurrentMesh, Matrix4x4.identity, propertySheet.material, 0, pass, propertySheet.properties);
         }
 
         /// <summary>
@@ -650,7 +650,7 @@ namespace UnityEngine.Rendering.PostProcessing
             if (viewport != null)
                 cmd.SetViewport(viewport.Value);
 
-            cmd.DrawMesh(CurrentActiveMesh, Matrix4x4.identity, propertySheet.material, 0, pass, propertySheet.properties);
+            cmd.DrawMesh(CurrentMesh, Matrix4x4.identity, propertySheet.material, 0, pass, propertySheet.properties);
         }
 
         /// <summary>
@@ -675,7 +675,7 @@ namespace UnityEngine.Rendering.PostProcessing
             if (clear)
                 cmd.ClearRenderTarget(true, true, Color.clear);
 
-            cmd.DrawMesh(CurrentActiveMesh, Matrix4x4.identity, propertySheet.material, 0, pass, propertySheet.properties);
+            cmd.DrawMesh(CurrentMesh, Matrix4x4.identity, propertySheet.material, 0, pass, propertySheet.properties);
         }
 
 		public static void BlitFullscreenTriangle(this CommandBuffer cmd, RenderTargetIdentifier source, RenderTargetIdentifier destination, Material material, int pass = 0, bool clear = false)
@@ -686,7 +686,7 @@ namespace UnityEngine.Rendering.PostProcessing
 			if (clear)
 				cmd.ClearRenderTarget(true, true, Color.clear);
 
-			cmd.DrawMesh(CurrentActiveMesh, Matrix4x4.identity, material, 0, pass);
+			cmd.DrawMesh(CurrentMesh, Matrix4x4.identity, material, 0, pass);
 		}
 
 		static CommandBuffer customBlitCmd = new CommandBuffer() { name = "Custom blit (Runtime Utilities)" };
@@ -696,7 +696,7 @@ namespace UnityEngine.Rendering.PostProcessing
 			customBlitCmd.Clear();
 			material.SetTexture(ShaderIDs.MainTex, source);
 			Graphics.SetRenderTarget(destination);
-			customBlitCmd.DrawMesh(CurrentActiveMesh, Matrix4x4.identity, material, 0, pass);
+			customBlitCmd.DrawMesh(CurrentMesh, Matrix4x4.identity, material, 0, pass);
 			Graphics.ExecuteCommandBuffer(customBlitCmd);
 		}
 
@@ -705,7 +705,7 @@ namespace UnityEngine.Rendering.PostProcessing
 			customBlitCmd.Clear();
 			copyStdMaterial.SetTexture(ShaderIDs.MainTex, source);
 			Graphics.SetRenderTarget(destination);
-			customBlitCmd.DrawMesh(CurrentActiveMesh, Matrix4x4.identity, copyStdMaterial, 0, 2);
+			customBlitCmd.DrawMesh(CurrentMesh, Matrix4x4.identity, copyStdMaterial, 0, 2);
 			Graphics.ExecuteCommandBuffer(customBlitCmd);
 		}
 
