@@ -279,11 +279,13 @@ struct VaryingsDefault
 float _DepthSlice;
 #endif
 
+		#include "Assets/Readout/Data/Shaders/VR/HmdBlitLibrary.cginc"
+
 VaryingsDefault VertDefault(AttributesDefault v)
 {
     VaryingsDefault o;
-    o.vertex = float4(v.vertex.xy, 0.0, 1.0);
-    o.texcoord = TransformTriangleVertexToUV(v.vertex.xy);
+    o.vertex = VertTspkMagic(float4(v.vertex, 0));
+    o.texcoord = TransformTriangleVertexToUV(o.vertex.xy);
 
 #if UNITY_UV_STARTS_AT_TOP
     o.texcoord = o.texcoord * float2(1.0, -1.0) + float2(0.0, 1.0);
@@ -304,12 +306,14 @@ VaryingsDefault VertUVTransform(AttributesDefault v)
 {
     VaryingsDefault o;
 
+    o.vertex = VertTspkMagic(float4(v.vertex, 0));
+    
 #if STEREO_DOUBLEWIDE_TARGET
-    o.vertex = float4(v.vertex.xy * _PosScaleOffset.xy + _PosScaleOffset.zw, 0.0, 1.0);
+    o.vertex = float4(o.vertex.xy * _PosScaleOffset.xy + _PosScaleOffset.zw, 0.0, 1.0);
 #else
-    o.vertex = float4(v.vertex.xy, 0.0, 1.0);
+    o.vertex = float4(o.vertex.xy, 0.0, 1.0);
 #endif
-    o.texcoord = TransformTriangleVertexToUV(v.vertex.xy) * _UVTransform.xy + _UVTransform.zw;
+    o.texcoord = TransformTriangleVertexToUV(o.vertex.xy) * _UVTransform.xy + _UVTransform.zw;
     o.texcoordStereo = TransformStereoScreenSpaceTex(o.texcoord, 1.0);
 #if STEREO_INSTANCING_ENABLED
     o.stereoTargetEyeIndex = (uint)_DepthSlice;

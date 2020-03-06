@@ -15,6 +15,8 @@ Shader "Hidden/PostProcessing/CopyStd"
     CGINCLUDE
 
 		#include "UnityCG.cginc"
+		#include "Assets/Readout/Data/Shaders/VR/HmdBlitLibrary.cginc"
+
 		#pragma multi_compile __ STEREO_RENDER
 
         struct Attributes
@@ -77,14 +79,14 @@ Shader "Hidden/PostProcessing/CopyStd"
             return color;
         }
 
-
-
 		//-------------------CUSTOM TSPK MAGIC
 		Varyings VertScreenSpace(Attributes v)
         {
             Varyings o;
-			o.vertex = float4(v.vertex.xy, 0.0, 1.0);
-			o.texcoord = (v.vertex.xy + 1.0) * 0.5;
+
+			o.vertex = VertTspkMagic(v.vertex);
+
+			o.texcoord = (o.vertex.xy + 1.0) * 0.5;
 
             #if UNITY_UV_STARTS_AT_TOP
             o.texcoord = o.texcoord * float2(1.0, -1.0) + float2(0.0, 1.0);
