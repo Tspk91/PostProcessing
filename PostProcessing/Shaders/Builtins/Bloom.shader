@@ -35,22 +35,22 @@ Shader "Hidden/PostProcessing/Bloom"
 
         half4 FragPrefilter13(VaryingsDefault i) : SV_Target
         {
-			half hudColor = 1;
-		#if HUD_BLOOM
-			hudColor += SAMPLE_TEXTURE2D(_HUD_RT, sampler_HUD_RT, UnityStereoTransformScreenSpaceTex(i.texcoord)).r * _HudBloomIntensity;
-		#endif
 			half4 color = DownsampleBox13Tap(TEXTURE2D_PARAM(_MainTex, sampler_MainTex), i.texcoord, UnityStereoAdjustedTexelSize(_MainTex_TexelSize).xy);
-            return Prefilter(SafeHDR(color * hudColor), i.texcoord);
+		#if HUD_BLOOM
+			half hudColor = SAMPLE_TEXTURE2D(_HUD_RT, sampler_HUD_RT, UnityStereoTransformScreenSpaceTex(i.texcoord)).r;
+			color = color * (1 + saturate(hudColor * _HudBloomIntensity) * _HudBloomIntensity);
+		#endif
+            return Prefilter(SafeHDR(color), i.texcoord);
         }
 
         half4 FragPrefilter4(VaryingsDefault i) : SV_Target
         {
-			half hudColor = 1;
-		#if HUD_BLOOM
-			hudColor += SAMPLE_TEXTURE2D(_HUD_RT, sampler_HUD_RT, UnityStereoTransformScreenSpaceTex(i.texcoord)).r * _HudBloomIntensity;
-		#endif
             half4 color = DownsampleBox4Tap(TEXTURE2D_PARAM(_MainTex, sampler_MainTex), i.texcoord, UnityStereoAdjustedTexelSize(_MainTex_TexelSize).xy);
-            return Prefilter(SafeHDR(color * hudColor), i.texcoord);
+		#if HUD_BLOOM
+			half hudColor = SAMPLE_TEXTURE2D(_HUD_RT, sampler_HUD_RT, UnityStereoTransformScreenSpaceTex(i.texcoord)).r;
+			color = color * (1 + saturate(hudColor * _HudBloomIntensity) * _HudBloomIntensity);
+		#endif
+            return Prefilter(SafeHDR(color), i.texcoord);
         }
 
         // ----------------------------------------------------------------------------------------

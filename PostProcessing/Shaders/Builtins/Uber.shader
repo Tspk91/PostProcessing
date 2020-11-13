@@ -13,6 +13,8 @@ Shader "Hidden/PostProcessing/Uber"
         TEXTURE2D_SAMPLER2D(_MainTex, sampler_MainTex);
         float4 _MainTex_TexelSize;
 
+		TEXTURE2D_SAMPLER2D(_HUD_RT, sampler_HUD_RT);
+
         // Auto exposure / eye adaptation
         TEXTURE2D_SAMPLER2D(_AutoExposureTex, sampler_AutoExposureTex);
 
@@ -130,6 +132,11 @@ Shader "Hidden/PostProcessing/Uber"
 
             color.rgb *= autoExposure;
 
+			#if HUD_BLOOM
+			half4 unmodifiedColor = color;
+			float hudMask = SAMPLE_TEXTURE2D(_HUD_RT, sampler_HUD_RT, UnityStereoTransformScreenSpaceTex(i.texcoord)).r;
+			#endif
+
             #if BLOOM || BLOOM_LOW
             {
                 #if BLOOM
@@ -162,7 +169,7 @@ Shader "Hidden/PostProcessing/Uber"
                     d = pow(saturate(d), _Vignette_Settings.z); // Roundness
                     half vfactor = pow(saturate(1.0 - dot(d, d)), _Vignette_Settings.y);
                     color.rgb *= lerp(_Vignette_Color, (1.0).xxx, vfactor);
-                    color.a = lerp(1.0, color.a, vfactor);
+                    //color.a = lerp(1.0, color.a, vfactor);
                 }
                 else
                 {
@@ -176,7 +183,7 @@ Shader "Hidden/PostProcessing/Uber"
 
                     half3 new_color = color.rgb * lerp(_Vignette_Color, (1.0).xxx, vfactor);
                     color.rgb = lerp(color.rgb, new_color, _Vignette_Opacity);
-                    color.a = lerp(1.0, color.a, vfactor);
+                    //color.a = lerp(1.0, color.a, vfactor);
                 }
             }
             #endif
@@ -215,6 +222,11 @@ Shader "Hidden/PostProcessing/Uber"
                 color.rgb = SRGBToLinear(color.rgb);
             }
             #endif
+
+			#if HUD_BLOOM
+			color = lerp(color, unmodifiedColor, saturate(hudMask * 4) * unmodifiedColor.a);
+			color.a = 1;
+			#endif
 
             half4 output = color;
 
@@ -267,12 +279,14 @@ Shader "Hidden/PostProcessing/Uber"
 
                 #pragma multi_compile __ DISTORT
                 #pragma multi_compile __ CHROMATIC_ABERRATION CHROMATIC_ABERRATION_LOW
-                #pragma multi_compile __ BLOOM BLOOM_LOW
+                #pragma multi_compile __ BLOOM BLOOM_LOW 
                 #pragma multi_compile __ COLOR_GRADING_LDR_2D COLOR_GRADING_HDR_2D COLOR_GRADING_HDR_3D
                 #pragma multi_compile __ VIGNETTE
                 #pragma multi_compile __ GRAIN
                 #pragma multi_compile __ FINALPASS
                 #pragma multi_compile __ STEREO_INSTANCING_ENABLED STEREO_DOUBLEWIDE_TARGET
+
+					#pragma multi_compile __ HUD_BLOOM
 
                 #pragma vertex VertUVTransform
                 #pragma fragment FragUber
@@ -301,6 +315,8 @@ Shader "Hidden/PostProcessing/Uber"
                 #pragma multi_compile __ GRAIN
                 #pragma multi_compile __ FINALPASS
                 #pragma multi_compile __ STEREO_DOUBLEWIDE_TARGET // not supported by OpenGL ES 2.0: STEREO_INSTANCING_ENABLED
+
+						#pragma multi_compile __ HUD_BLOOM
 
                 #pragma vertex VertUVTransform
                 #pragma fragment FragUber
