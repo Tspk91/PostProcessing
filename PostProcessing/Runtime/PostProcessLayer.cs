@@ -80,7 +80,7 @@ namespace UnityEngine.Rendering.PostProcessing
 		public bool standaloneMotionBlur = false;
 
 		[System.NonSerialized]
-		public RenderTargetIdentifier? customSourceTarget;
+		public RenderTargetIdentifier? customSourceTarget = null;
 		[System.NonSerialized]
 		public CommandBuffer standaloneMotionBlurCmd;
 
@@ -1239,23 +1239,9 @@ namespace UnityEngine.Rendering.PostProcessing
 			context.command = standaloneMotionBlurCmd;
 			var cmd = context.command;
 
-			context.source = m_Camera.targetTexture;
-			int rtId = Shader.PropertyToID("StandaloneMotionBlurRT");
-
-			RenderTextureDescriptor rtDescriptor;
-			if (m_Camera.targetTexture != null)
-				rtDescriptor = m_Camera.targetTexture.descriptor;
-			else
-				rtDescriptor = new RenderTextureDescriptor(Screen.width, Screen.height, RenderTextureFormat.DefaultHDR, 32);
-
-			context.command.GetTemporaryRT(rtId, rtDescriptor);
-			context.destination = rtId;
+			context.destination = m_Camera.targetTexture;
 
 			effect.renderer.Render(context);
-
-			context.command.Blit(context.destination, m_Camera.targetTexture);
-
-			context.command.ReleaseTemporaryRT(rtId);
 		}
 
         int RenderBuiltins(PostProcessRenderContext context, bool isFinalPass, int releaseTargetAfterUse = -1, int eye = -1)

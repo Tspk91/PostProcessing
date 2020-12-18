@@ -132,11 +132,6 @@ Shader "Hidden/PostProcessing/Uber"
 
             color.rgb *= autoExposure;
 
-			#if HUD_BLOOM
-			half4 unmodifiedColor = color;
-			float hudMask = SAMPLE_TEXTURE2D(_HUD_RT, sampler_HUD_RT, UnityStereoTransformScreenSpaceTex(i.texcoord)).r;
-			#endif
-
             #if BLOOM || BLOOM_LOW
             {
                 #if BLOOM
@@ -158,6 +153,11 @@ Shader "Hidden/PostProcessing/Uber"
                 color += dirt * bloom;
             }
             #endif
+
+#if HUD_BLOOM
+			half4 unmodifiedColor = color;
+			float hudMask = SAMPLE_TEXTURE2D(_HUD_RT, sampler_HUD_RT, UnityStereoTransformScreenSpaceTex(i.texcoord)).r;
+#endif
 
             #if VIGNETTE
             {

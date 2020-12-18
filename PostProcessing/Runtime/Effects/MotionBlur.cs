@@ -81,7 +81,7 @@ namespace UnityEngine.Rendering.PostProcessing
 
             if (m_ResetHistory)
             {
-                cmd.BlitFullscreenTriangle(context.source, context.destination);
+                //cmd.BlitFullscreenTriangle(context.source, context.destination);
                 m_ResetHistory = false;
                 return;
             }
@@ -147,7 +147,7 @@ namespace UnityEngine.Rendering.PostProcessing
 
             // Pass 7 - Reconstruction pass
             sheet.properties.SetFloat(ShaderIDs.LoopCount, Mathf.Clamp(settings.sampleCount / 2, 1, 64));
-            cmd.BlitFullscreenTriangle(context.source, context.destination, sheet, (int)Pass.Reconstruction);
+            cmd.BlitFullscreenTriangle(BuiltinRenderTextureType.None, context.destination, sheet, (int)Pass.Reconstruction);
 
             cmd.ReleaseTemporaryRT(vbuffer);
             cmd.ReleaseTemporaryRT(neighborMax);

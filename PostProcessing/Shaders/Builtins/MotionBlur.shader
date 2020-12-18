@@ -5,6 +5,9 @@ Shader "Hidden/PostProcessing/MotionBlur"
         #pragma target 3.0
         #include "../StdLib.hlsl"
 
+		TEXTURE2D_SAMPLER2D(_StandaloneMotionBlurRT, sampler_StandaloneMotionBlurRT);
+		float4 _StandaloneMotionBlurRT_TexelSize;
+
         TEXTURE2D_SAMPLER2D(_MainTex, sampler_MainTex);
         float4 _MainTex_TexelSize;
 
@@ -169,11 +172,13 @@ Shader "Hidden/PostProcessing/MotionBlur"
             return half3((v.xy * 2.0 - 1.0) * _MaxBlurRadius, v.z);
         }
 
+		//Replaced _MainTex with _StandaloneMotionBlurRT;
+
         // Reconstruction filter
         half4 FragReconstruction(VaryingsDefault i) : SV_Target
         {
             // Color sample at the center point
-            const half4 c_p = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.texcoord);
+            const half4 c_p = SAMPLE_TEXTURE2D(_StandaloneMotionBlurRT, sampler_StandaloneMotionBlurRT, i.texcoord);
 
             // Velocity/Depth sample at the center point
             const half3 vd_p = SampleVelocity(i.texcoord);
@@ -221,11 +226,11 @@ Shader "Hidden/PostProcessing/MotionBlur"
                 const half l_t = l_v_max * abs(t_s);
 
                 // UVs for the sample position
-                const float2 uv0 = i.texcoord + v_s * t_s * _MainTex_TexelSize.xy;
+                const float2 uv0 = i.texcoord + v_s * t_s * _StandaloneMotionBlurRT_TexelSize.xy;
                 const float2 uv1 = i.texcoord + v_s * t_s * _VelocityTex_TexelSize.xy;
 
                 // Color sample
-                const half3 c = SAMPLE_TEXTURE2D_LOD(_MainTex, sampler_MainTex, uv0, 0.0).rgb;
+                const half3 c = SAMPLE_TEXTURE2D_LOD(_StandaloneMotionBlurRT, sampler_StandaloneMotionBlurRT, uv0, 0.0).rgb;
 
                 // Velocity/Depth sample
                 const half3 vd = SampleVelocity(uv1);
